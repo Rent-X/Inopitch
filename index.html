@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0b0b0b;
-            color: #d1d1d1;
+            background-color: #0f172a; /* Slate Blue Theme */
+            color: #f8fafc;
             margin: 0;
             padding: 30px 20px;
         }
@@ -17,22 +17,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid #1e293b;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
         h1 { color: #ffffff; font-size: 24px; margin: 0; }
         .btn-toggle {
-            background-color: #1a1a1a;
+            background-color: #3b82f6; /* Vibrant Blue */
             color: #fff;
-            border: 1px solid #333;
-            padding: 8px 16px;
+            border: none;
+            padding: 9px 18px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
         }
-        .btn-toggle:hover { background-color: #252525; }
+        .btn-toggle:hover { background-color: #2563eb; }
         
         .grid {
             display: grid;
@@ -40,22 +40,22 @@
             gap: 20px;
         }
         .card {
-            background-color: #141414;
-            border: 1px solid #222;
+            background-color: #1e293b;
+            border: 1px solid #334155;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }
         .card h3 { margin-top: 0; color: #fff; font-size: 16px; margin-bottom: 10px; }
-        .card p { font-size: 13px; color: #999; margin: 6px 0; }
+        .card p { font-size: 13px; color: #94a3b8; margin: 6px 0; }
         .item-img {
             width: 100%;
             height: 130px;
             object-fit: cover;
             border-radius: 6px;
             margin: 10px 0;
-            border: 1px solid #2c2c2c;
-            background: #0f0f0f;
+            border: 1px solid #334155;
+            background: #0f172a;
         }
         
         /* Modal Form for Listing */
@@ -63,52 +63,52 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(15, 23, 42, 0.85);
             justify-content: center;
             align-items: center;
             z-index: 100;
         }
         .modal-content {
-            background-color: #141414;
-            border: 1px solid #222;
+            background-color: #1e293b;
+            border: 1px solid #334155;
             border-radius: 12px;
             padding: 30px;
             width: 100%;
             max-width: 450px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             box-sizing: border-box;
             max-height: 90vh;
             overflow-y: auto;
         }
-        label { display: block; font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 500; }
+        label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; font-weight: 500; }
         input {
             width: 100%;
             box-sizing: border-box;
             padding: 12px 14px;
             margin-bottom: 15px;
-            background-color: #1a1a1a;
-            border: 1px solid #2c2c2c;
+            background-color: #0f172a;
+            border: 1px solid #334155;
             border-radius: 6px;
-            color: #e5e5e5;
+            color: #f8fafc;
             font-size: 14px;
         }
-        input:focus { outline: none; border-color: #555; background-color: #1f1f1f; }
+        input:focus { outline: none; border-color: #3b82f6; }
         .file-label {
-            background-color: #1a1a1a;
-            border: 1px dashed #333;
+            background-color: #0f172a;
+            border: 1px dashed #334155;
             text-align: center;
             cursor: pointer;
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 15px;
             display: block;
-            color: #888;
+            color: #94a3b8;
             font-size: 13px;
         }
-        .file-label:hover { border-color: #555; color: #fff; }
+        .file-label:hover { border-color: #3b82f6; color: #fff; }
         .btn-submit {
-            background-color: #ffffff;
-            color: #0b0b0b;
+            background-color: #3b82f6;
+            color: #ffffff;
             border: none;
             font-weight: 600;
             cursor: pointer;
@@ -117,8 +117,8 @@
             border-radius: 6px;
             font-size: 14px;
         }
-        .btn-submit:hover { background-color: #dcdcdc; }
-        .no-items { color: #666; font-style: italic; font-size: 14px; }
+        .btn-submit:hover { background-color: #2563eb; }
+        .no-items { color: #64748b; font-style: italic; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -129,7 +129,7 @@
             <button class="btn-toggle" onclick="toggleModal(true)">+ List an Item</button>
         </div>
 
-        <h2 style="font-size: 16px; color: #fff; margin-bottom: 15px;">Available Items for Rent</h2>
+        <h2 style="font-size: 16px; color: #f8fafc; margin-bottom: 15px;">Available Items for Rent</h2>
         <div id="marketplace-grid" class="grid"></div>
     </div>
 
@@ -158,13 +158,11 @@
             </label>
 
             <button class="btn-submit" onclick="submitItem()">Submit to Manager</button>
-            <button class="btn-toggle" style="width: 100%; margin-top: 10px; background: transparent; border: 1px solid #333;" onclick="toggleModal(false)">Cancel</button>
+            <button class="btn-toggle" style="width: 100%; margin-top: 10px; background: transparent; border: 1px solid #334155; color: #94a3b8;" onclick="toggleModal(false)">Cancel</button>
         </div>
     </div>
 
     <script>
-        let base64Image = "";
-
         function toggleModal(show) {
             document.getElementById('listModal').style.display = show ? 'flex' : 'none';
         }
@@ -174,23 +172,33 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    base64Image = e.target.result;
-                    preview.src = base64Image;
+                    preview.src = e.target.result;
                     preview.style.display = 'block';
                 }
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
-        function submitItem() {
+        async function submitItem() {
             const name = document.getElementById('itemName').value.trim();
             const owner = document.getElementById('ownerName').value.trim();
             const rate = document.getElementById('itemRate').value.trim();
             const address = document.getElementById('itemAddress').value.trim();
+            const fileInput = document.getElementById('itemImage');
 
             if (!name || !owner || !rate || !address) {
                 alert("Please fill out all fields before submitting.");
                 return;
+            }
+
+            // Async promise to ensure photo base64 is fully captured before storing
+            let imageData = "";
+            if (fileInput.files && fileInput.files[0]) {
+                imageData = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                });
             }
 
             const newItem = {
@@ -199,23 +207,23 @@
                 owner: owner,
                 rate: rate,
                 address: address,
-                image: base64Image
+                image: imageData
             };
 
             let approvals = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
             approvals.push(newItem);
             localStorage.setItem('rentx_manager_approvals', JSON.stringify(approvals));
 
-            alert("Item successfully submitted to Manager for approval!");
+            alert("Item successfully submitted with photo to Manager for approval!");
             toggleModal(false);
             
-            // Clear form
+            // Clear form fields
             document.getElementById('itemName').value = '';
             document.getElementById('ownerName').value = '';
             document.getElementById('itemRate').value = '';
             document.getElementById('itemAddress').value = '';
+            document.getElementById('itemImage').value = '';
             document.getElementById('imagePreview').style.display = 'none';
-            base64Image = "";
         }
 
         function loadMarketplaceItems() {
@@ -234,7 +242,7 @@
                 
                 let imageHtml = item.image 
                     ? `<img src="${item.image}" class="item-img" alt="Item">`
-                    : `<div style="font-size: 12px; color: #555; margin: 10px 0; font-style: italic;">No image available</div>`;
+                    : `<div style="font-size: 12px; color: #64748b; margin: 10px 0; font-style: italic;">No image available</div>`;
 
                 card.innerHTML = `
                     <h3>${item.name}</h3>
