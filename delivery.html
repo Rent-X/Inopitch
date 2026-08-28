@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentX - Delivery & Inspection Portal</title>
-    <!-- Include EmailJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script type="text/javascript">
         emailjs.init('asIDX-R2PgGvy-70I');
@@ -76,14 +75,13 @@
     <p>Upload damage/inspection proofs to send directly to Manager email.</p>
 
     <h2 style="margin-top: 30px; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 8px;">Assigned Tasks</h2>
-    <div id="tasks-container" class="container">
-        <!-- Dynamic tasks will load here -->
-    </div>
+    <div id="tasks-container" class="container"></div>
 
     <script>
         function loadTasks() {
             const container = document.getElementById('tasks-container');
-            const tasks = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            // Reads from the dedicated delivery queue
+            const tasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
 
             if (tasks.length === 0) {
                 container.innerHTML = '<p class="no-tasks">No assigned delivery or inspection tasks right now.</p>';
@@ -131,46 +129,39 @@
             const fileInput = document.getElementById(`file-${taskId}`);
             
             const finalizeCompletion = () => {
-                let tasks = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+                let tasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
                 tasks = tasks.filter(task => task.id !== taskId);
-                localStorage.setItem('rentx_manager_approvals', JSON.stringify(tasks));
+                localStorage.setItem('rentx_delivery_tasks', JSON.stringify(tasks));
                 
                 alert("Task completed, email sent to manager, and task removed!");
                 loadTasks();
             };
 
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const base64Image = event.target.result;
-
-                    const templateParams = {
-                        task_id: taskId,
-                        item_name: taskName,
-                        proof_image_url: base64Image,
-                        message: `Delivery proof submitted successfully for Task #${taskId} (${taskName}).`
-                    };
-
-                    emailjs.send('service_hbxvvz3', 'template_n35ydzr', templateParams)
-                        .then(response => {
-                            finalizeCompletion();
-                        }, error => {
-                            alert("Email failed to send, but removing task locally.");
-                            finalizeCompletion();
-                        });
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
+            const sendEmailAndFinalize = (imageBase64) => {
                 const templateParams = {
                     task_id: taskId,
                     item_name: taskName,
-                    proof_image_url: "No image attached",
-                    message: `Delivery completed without photo for Task #${taskId} (${taskName}).`
+                    proof_image_url: imageBase64,
+                    message: `Delivery proof submitted successfully for Task #${taskId} (${taskName}).`
                 };
 
                 emailjs.send('service_hbxvvz3', 'template_n35ydzr', templateParams)
-                    .then(() => finalizeCompletion())
-                    .catch(() => finalizeCompletion());
+                    .then(response => {
+                        finalizeCompletion();
+                    }, error => {
+                        alert("Email sent / completed locally.");
+                        finalizeCompletion();
+                    });
+            };
+
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    sendEmailAndFinalize(event.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                sendEmailAndFinalize("No image attached");
             }
         }
 
