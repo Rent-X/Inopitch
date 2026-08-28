@@ -117,130 +117,16 @@
     <div class="card">
         <div class="card-header">
             <h3>Pending Approval Request</h3>
-            <span id="mgr-status-badge" class="badge badge-pending">Awaiting Inspection</span>
+            <span id="mgr-status-badge" class="badge badge-pending">Awaiting Task</span>
         </div>
 
-        <p id="mgr-item"><strong>Item:</strong> Sony Alpha A7 III Camera</p>
-        <p id="mgr-rate" style="margin-top: 4px;"><strong>Estimated Rental Rate:</strong> ₹5,000 / day</p>
-        <p id="mgr-owner" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Owner:</strong> Alex Vance</p>
+        <p id="mgr-item"><strong>Item:</strong> No active request</p>
+        <p id="mgr-rate" style="margin-top: 4px;"><strong>Estimated Rental Rate:</strong> ₹0 / day</p>
+        <p id="mgr-owner" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Owner:</strong> N/A</p>
         
         <div class="finance-breakdown">
             <div class="finance-row"><span>Rental Duration (Example):</span> <span>2 Days</span></div>
-            <div class="finance-row"><span id="lbl-total">Total Volume (Rate × 2):</span> <span id="val-total">₹10,000</span></div>
-            <div class="finance-row" style="color: var(--success);"><span>Owner Payout (75%):</span> <span id="val-owner">₹7,500</span></div>
-            <div class="finance-row" style="color: var(--brand);"><span>RentX Commission (15%):</span> <span id="val-comm">₹1,500</span></div>
-            <div class="finance-row" style="color: var(--text-muted);"><span>Ops / Reserve (10%):</span> <span id="val-ops">₹1,000</span></div>
-        </div>
-
-        <h4 style="margin-bottom: 8px; font-size: 14px;">Delivery Partner Inspection Photos:</h4>
-        <div id="mgr-preview-container" class="preview-grid">
-            <p style="color: var(--text-muted); font-size: 13px; grid-column: span 3;">No field photos submitted by DB yet.</p>
-        </div>
-
-        <div style="margin-top: 20px;">
-            <button id="approve-btn" class="btn btn-success" onclick="approveTransit()">Approve Transit & Publish to Shop</button>
-            <button id="reject-btn" class="btn btn-danger" onclick="rejectTransit()">Reject & Return to Owner</button>
-        </div>
-    </div>
-
-    <script>
-        let currentTask = null;
-
-        function loadManagerData() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (savedTask) {
-                currentTask = JSON.parse(savedTask);
-                const rate = Number(currentTask.rate);
-
-                document.getElementById('mgr-item').innerHTML = `<strong>Item:</strong> ${currentTask.item}`;
-                document.getElementById('mgr-rate').innerHTML = `<strong>Estimated Rental Rate:</strong> ₹${rate.toLocaleString()} / day`;
-                document.getElementById('mgr-owner').innerHTML = `<strong>Owner:</strong> ${currentTask.owner}`;
-
-                const total2Days = rate * 2;
-                document.getElementById('val-total').innerText = `₹${total2Days.toLocaleString()}`;
-                document.getElementById('val-owner').innerText = `₹${(total2Days * 0.75).toLocaleString()}`;
-                document.getElementById('val-comm').innerText = `₹${(total2Days * 0.15).toLocaleString()}`;
-                document.getElementById('val-ops').innerText = `₹${(total2Days * 0.10).toLocaleString()}`;
-
-                if (currentTask.status === 'approved') {
-                    setApprovedUI();
-                } else if (currentTask.status === 'rejected') {
-                    setRejectedUI();
-                }
-            }
-
-            const savedPhotos = localStorage.getItem('rentx_inspection_photos');
-            if (savedPhotos) {
-                const photos = JSON.parse(savedPhotos);
-                const container = document.getElementById('mgr-preview-container');
-                container.innerHTML = '';
-                photos.forEach(src => {
-                    const img = document.createElement('img');
-                    img.src = src;
-                    container.appendChild(img);
-                });
-            }
-        }
-
-        function approveTransit() {
-            if (!currentTask) return;
-
-            currentTask.status = 'approved';
-
-            const savedPhotos = localStorage.getItem('rentx_inspection_photos');
-            if (savedPhotos && !currentTask.image) {
-                const photos = JSON.parse(savedPhotos);
-                if (photos.length > 0) {
-                    currentTask.image = photos[0];
-                }
-            }
-
-            localStorage.setItem('rentx_active_task', JSON.stringify(currentTask));
-
-            let approvedItems = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
-            const exists = approvedItems.some(i => i.id === currentTask.id);
-            if (!exists) {
-                approvedItems.push(currentTask);
-                localStorage.setItem('rentx_approved_items', JSON.stringify(approvedItems));
-            }
-
-            setApprovedUI();
-            alert('Item approved! It is now live on the Customer Shop page with the uploaded photo.');
-        }
-
-        function rejectTransit() {
-            if (!currentTask) return;
-
-            currentTask.status = 'rejected';
-            localStorage.setItem('rentx_active_task', JSON.stringify(currentTask));
-
-            setRejectedUI();
-            alert('Item rejected. Partner notified to return item.');
-        }
-
-        function setApprovedUI() {
-            const badge = document.getElementById('mgr-status-badge');
-            badge.className = 'badge badge-approved';
-            badge.innerText = 'Approved & Live';
-            document.getElementById('approve-btn').disabled = true;
-            document.getElementById('reject-btn').disabled = true;
-        }
-
-        function setRejectedUI() {
-            const badge = document.getElementById('mgr-status-badge');
-            badge.className = 'badge badge-rejected';
-            badge.innerText = 'Rejected';
-            document.getElementById('approve-btn').disabled = true;
-            document.getElementById('reject-btn').disabled = true;
-        }
-
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'rentx_inspection_photos' || e.key === 'rentx_active_task') {
-                loadManagerData();
-            }
-        });
-
-        window.addEventListener('DOMContentLoaded', loadManagerData);
-    </script>
-</body>
-</html>
+            <div class="finance-row"><span id="lbl-total">Total Volume (Rate × 2):</span> <span id="val-total">₹0</span></div>
+            <div class="finance-row" style="color: var(--success);"><span>Owner Payout (75%):</span> <span id="val-owner">₹0</span></div>
+            <div class="finance-row" style="color: var(--brand);"><span>RentX Commission (15%):</span> <span id="val-comm">₹0</span></div>
+            <div class="finance-row" style="color: var(--text-muted);"><span>Ops / Reserve (10%):</span> <span
