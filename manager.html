@@ -58,13 +58,12 @@
     <p>Logged in as: nesar.minein@gmail.com</p>
 
     <h2 style="font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 30px;">Pending Item Approvals & Images</h2>
-    <div id="manager-container" class="container">
-        <!-- Dynamic manager approvals will load here -->
-    </div>
+    <div id="manager-container" class="container"></div>
 
     <script>
         function loadManagerApprovals() {
             const container = document.getElementById('manager-container');
+            // Reads incoming submissions from marketplace
             const pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
 
             if (pendingItems.length === 0) {
@@ -77,24 +76,18 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                // Check if an image or proof was stored with this item object
-                let imageHtml = '';
-                if (item.image || item.proof_image_url) {
-                    imageHtml = `<img src="${item.image || item.proof_image_url}" class="manager-img-preview" alt="Item Image">`;
-                } else {
-                    imageHtml = `<div style="font-size: 12px; color: #775; margin: 10px 0; font-style: italic;">No image attached with submission</div>`;
-                }
+                let imageHtml = item.image || item.proof_image_url 
+                    ? `<img src="${item.image || item.proof_image_url}" class="manager-img-preview" alt="Item Image">`
+                    : `<div style="font-size: 12px; color: #775; margin: 10px 0; font-style: italic;">No image attached</div>`;
 
                 card.innerHTML = `
                     <div style="background: #2980b9; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: bold; margin-bottom: 10px;">Manager Verification</div>
-                    <h3 style="margin-bottom: 12px;">${item.name || item.item || 'New Listing'}</h3>
+                    <h3>${item.name || item.item || 'New Listing'}</h3>
                     <p><strong>ID:</strong> #${item.id}</p>
                     <p><strong>Owner:</strong> ${item.owner || 'N/A'}</p>
                     <p><strong>Address:</strong> ${item.address || 'N/A'}</p>
                     <p><strong>Rate:</strong> ₹${item.rate || 0} / day</p>
-                    
                     ${imageHtml}
-
                     <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish Item</button>
                 `;
                 container.appendChild(card);
@@ -103,10 +96,20 @@
 
         function approveItem(itemId) {
             let items = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            const approvedItem = items.find(i => i.id === itemId);
+            
+            // Remove from manager queue
             items = items.filter(item => item.id !== itemId);
             localStorage.setItem('rentx_manager_approvals', JSON.stringify(items));
+
+            // Push approved item to delivery/active rentals queue so delivery.html can see it
+            if (approvedItem) {
+                let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+                deliveryTasks.push(approvedItem);
+                localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryTasks));
+            }
             
-            alert("Item approved successfully!");
+            alert("Item approved and sent to delivery queue!");
             loadManagerApprovals();
         }
 
