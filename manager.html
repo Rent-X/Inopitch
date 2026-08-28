@@ -75,7 +75,7 @@
 
             // 1. Remove from pending queue
             pendingTasks = pendingTasks.filter(t => t.id !== taskId);
-            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingTasks));
+            localStorage.setItem('rentx_manager_approvals', JSON.stringify(pendingTasks));
 
             // 2. Add to live marketplace approved items
             taskToApprove.status = 'approved';
