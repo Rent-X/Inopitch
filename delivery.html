@@ -36,7 +36,7 @@
     <script type="text/javascript">
        (function(){
           // Replace with your EmailJS Public Key
-          emailjs.init("YOUR_PUBLIC_KEY");
+          emailjs.init("asIDX-R2PgGvy-70I");
        })();
     </script>
 </head>
@@ -86,7 +86,7 @@ function loadTasks() {
         card.innerHTML = `
             <div>
                 <span class="badge ${badgeClass}">${badgeText}</span>
-                <h3 style="margin-bottom: 12px; font-size: 18px;">${task.item}</h3>
+                <h3 style="margin-bottom: 12px; font-size: 18px;">${task.item || task.name || 'Rental Item'}</h3>
                 <div class="info-row"><strong>Task ID:</strong> #${task.id}</div>
                 <div class="info-row"><strong>${nameLabel}:</strong> ${personName}</div>
                 <div class="info-row"><strong>Address:</strong> ${address}</div>
