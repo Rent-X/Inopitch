@@ -167,11 +167,11 @@
         </div>
     </header>
 
-    <!-- PAGE 1: SHOP ALL ITEMS -->
+    <!-- SHOP PAGE -->
     <main id="page-shop">
         <h2 style="margin-bottom: 16px; font-size: 20px;">Available for Rent (Manager Approved)</h2>
         <div class="grid" id="shop-items">
-            <!-- Pre-existing Default Inventory -->
+            <!-- Default Inventory -->
             <div class="card">
                 <div>
                     <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80" alt="Camera">
@@ -194,11 +194,11 @@
         </div>
     </main>
 
-    <!-- PAGE 2: OWNED THINGS SELLER FORM -->
+    <!-- SELLER FORM PAGE -->
     <main id="page-seller" class="hidden">
         <div class="form-container">
             <h2 style="margin-bottom: 8px; font-size: 20px;">List Your Item for Rent</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Fill in details below. The delivery partner will be auto-assigned for pickup inspection.</p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Fill in details below. Delivery partner will be auto-assigned for pickup inspection.</p>
             
             <form id="seller-form" onsubmit="handleSellerSubmit(event)">
                 <div class="form-group">
@@ -254,13 +254,12 @@
                 address: document.getElementById('pickup-address').value,
                 item: document.getElementById('item-title').value,
                 rate: document.getElementById('daily-rate').value,
-                status: 'pending_photos'
+                status: 'pending_photos',
+                image: ''
             };
 
-            // Save active pickup task to localStorage
             localStorage.setItem('rentx_active_task', JSON.stringify(taskData));
 
-            // Optional email notification dispatch
             try {
                 await fetch('https://api.resend.com/emails', {
                     method: 'POST',
@@ -276,7 +275,7 @@
                     })
                 });
             } catch (err) {
-                console.warn('CORS restriction on direct browser call. Dynamic storage updated.');
+                console.warn('CORS restriction on client fetch. Local storage synced.');
             }
 
             document.getElementById('seller-form').reset();
@@ -290,12 +289,14 @@
             approvedItems.forEach(item => {
                 if (document.getElementById(`item-${item.id}`)) return;
 
+                const displayImg = item.image ? item.image : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
+
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.id = `item-${item.id}`;
                 card.innerHTML = `
                     <div>
-                        <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80" alt="${item.item}">
+                        <img src="${displayImg}" alt="${item.item}">
                         <h3>${item.item}</h3>
                         <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Listed by ${item.owner}</p>
                         <div class="price">₹${Number(item.rate).toLocaleString()} / day</div>
@@ -305,6 +306,12 @@
                 shopContainer.appendChild(card);
             });
         }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'rentx_approved_items') {
+                loadApprovedShopItems();
+            }
+        });
 
         window.addEventListener('DOMContentLoaded', loadApprovedShopItems);
     </script>
