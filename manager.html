@@ -156,7 +156,6 @@
                 document.getElementById('mgr-rate').innerHTML = `<strong>Estimated Rental Rate:</strong> ₹${rate.toLocaleString()} / day`;
                 document.getElementById('mgr-owner').innerHTML = `<strong>Owner:</strong> ${currentTask.owner}`;
 
-                // Calculate finances
                 const total2Days = rate * 2;
                 document.getElementById('val-total').innerText = `₹${total2Days.toLocaleString()}`;
                 document.getElementById('val-owner').innerText = `₹${(total2Days * 0.75).toLocaleString()}`;
@@ -170,7 +169,6 @@
                 }
             }
 
-            // Load delivery partner photos
             const savedPhotos = localStorage.getItem('rentx_inspection_photos');
             if (savedPhotos) {
                 const photos = JSON.parse(savedPhotos);
@@ -188,9 +186,17 @@
             if (!currentTask) return;
 
             currentTask.status = 'approved';
+
+            const savedPhotos = localStorage.getItem('rentx_inspection_photos');
+            if (savedPhotos && !currentTask.image) {
+                const photos = JSON.parse(savedPhotos);
+                if (photos.length > 0) {
+                    currentTask.image = photos[0];
+                }
+            }
+
             localStorage.setItem('rentx_active_task', JSON.stringify(currentTask));
 
-            // Publish item into approved shop list
             let approvedItems = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
             const exists = approvedItems.some(i => i.id === currentTask.id);
             if (!exists) {
@@ -199,7 +205,7 @@
             }
 
             setApprovedUI();
-            alert('Item approved! It is now live on the Customer Shop page.');
+            alert('Item approved! It is now live on the Customer Shop page with the uploaded photo.');
         }
 
         function rejectTransit() {
@@ -228,7 +234,6 @@
             document.getElementById('reject-btn').disabled = true;
         }
 
-        // Listen for photo uploads coming from delivery.html
         window.addEventListener('storage', (e) => {
             if (e.key === 'rentx_inspection_photos' || e.key === 'rentx_active_task') {
                 loadManagerData();
