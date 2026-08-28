@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentX - Delivery Partner Portal</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --brand: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 24px; }
+        header { padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 8px; }
+        .badge-pickup { background: rgba(59, 130, 246, 0.2); color: var(--brand); }
+        .badge-delivery { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center; margin: 12px 0; position: relative; cursor: pointer; font-size: 13px; }
+        .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .preview-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-top: 8px; border: 1px solid var(--border); }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; margin-top: 8px; }
+        .btn-success { background: var(--success); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>RentX Delivery Partner App</h1>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Active Pickup & Customer Delivery Tasks</p>
+    </header>
+
+    <h2 style="font-size: 18px; margin-bottom: 12px;">Active Task Queue</h2>
+    <div id="tasks-container" class="grid"></div>
+
+    <script>
+        function loadAllTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            const pendingPickups = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            const pendingDeliveries = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+
+            let totalTasks = 0;
+
+            // Render Seller Pickups
+            pendingPickups.forEach(task => {
+                if (task.status !== 'pending_photos') return;
+                totalTasks++;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span class="badge badge-pickup">Seller Pickup Task</span>
+                    <h3>${task.item}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"><strong>Pickup:</strong> ${task.address}</p>
+                    <p style="font-size: 13px; color: var(--text-muted);"><strong>Owner:</strong> ${task.owner}</p>
+                    
+                    <div class="upload-zone">
+                        <p>📷 Upload Inspection Photo</p>
+                        <input type="file" accept="image/*" onchange="handlePickupPhoto(event, '${task.id}')">
+                    </div>
+                    <div id="preview-${task.id}"></div>
+                    <button id="btn-${task.id}" class="btn" disabled onclick="submitPickup('${task.id}')">Submit for Manager Approval</button>
+                `;
+                container.appendChild(card);
+            });
+
+            // Render Customer Deliveries
+            pendingDeliveries.forEach(task => {
+                if (task.status !== 'pending_delivery') return;
+                totalTasks++;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span class="badge badge-delivery">Customer Delivery Task</span>
+                    <h3>${task.item}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"><strong>Deliver To:</strong> ${task.customer}</p>
+                    <p style="font-size: 13px; color: var(--text-muted);"><strong>Address:</strong> ${task.deliveryAddress}</p>
+                    <p style="font-size: 13px; color: var(--accent);"><strong>Amount Paid:</strong> ₹${task.total.toLocaleString()}</p>
+
+                    <div class="upload-zone">
+                        <p>📦 Upload Delivery Proof Photo</p>
+                        <input type="file" accept="image/*" onchange="handleDeliveryPhoto(event, '${task.id}')">
+                    </div>
+                    <div id="preview-${task.id}"></div>
+                    <button id="btn-${task.id}" class="btn btn-success" disabled onclick="completeDelivery('${task.id}')">Mark Handed Over & Complete</button>
+                `;
+                container.appendChild(card);
+            });
+
+            if (totalTasks === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);">No pending pickup or delivery tasks.</p>';
+            }
+        }
+
+        let tempPhotos = {};
+
+        function handlePickupPhoto(event, taskId) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempPhotos[taskId] = e.target.result;
+                document.getElementById(`preview-${taskId}`).innerHTML = `<img src="${e.target.result}" class="preview-img" />`;
+                document.getElementById(`btn-${taskId}`).disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleDeliveryPhoto(event, taskId) {
+            handlePickupPhoto(event, taskId);
+        }
+
+        function submitPickup(taskId) {
+            let pendingPickups = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            pendingPickups = pendingPickups.map(t => {
+                if (t.id === taskId) {
+                    t.image = tempPhotos[taskId];
+                    t.status = 'photos_submitted';
+                }
+                return t;
+            });
+            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingPickups));
+            loadAllTasks();
+        }
+
+        function completeDelivery(taskId) {
+            let pendingDeliveries = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+            pendingDeliveries = pendingDeliveries.filter(t => t.id !== taskId);
+            localStorage.setItem('rentx_delivery_tasks', JSON.stringify(pendingDeliveries));
+            alert(`Delivery Order #${taskId} successfully completed! Task cleared.`);
+            loadAllTasks();
+        }
+
+        window.addEventListener('storage', loadAllTasks);
+        window.addEventListener('DOMContentLoaded', loadAllTasks);
+    </script>
+</body>
+</html>
