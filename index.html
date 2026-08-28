@@ -35,12 +35,21 @@
         .alert-success { background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 12px; border-radius: 8px; margin-top: 16px; text-align: center; }
         
         /* Interactive Booking Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .bill-box { background: #0f172a; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; margin: 16px 0; }
         .bill-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
         .bill-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; color: var(--success); padding-top: 6px; border-top: 1px solid var(--border); }
     </style>
+
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          // Replace with your EmailJS Public Key
+          emailjs.init("YOUR_PUBLIC_KEY");
+       })();
+    </script>
 </head>
 <body>
     <header>
@@ -55,14 +64,14 @@
     </header>
 
     <main id="page-shop">
-        <h2 style="margin-bottom: 16px; font-size: 20px;">Available for Rent (Manager Approved)</h2>
+        <h2 style="margin-bottom: 16px; font-size: 20px;">Available for Rent</h2>
         <div class="grid" id="shop-items"></div>
     </main>
 
     <main id="page-seller" class="hidden">
         <div class="form-container">
             <h2 style="margin-bottom: 8px; font-size: 20px;">List Your Item for Rent</h2>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Fill in details below for delivery partner pickup and manager approval.</p>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Fill in details below for pickup inspection.</p>
             
             <form id="seller-form" onsubmit="handleSellerSubmit(event)">
                 <div class="form-group">
@@ -81,19 +90,19 @@
                     <label>Desired Rental Rate (₹/day)</label>
                     <input type="number" id="daily-rate" class="form-control" placeholder="500" required>
                 </div>
-                <button type="submit" class="btn">Submit for Pickup & Approval</button>
+                <button type="submit" class="btn">Submit for Pickup & Inspection</button>
             </form>
             <div id="success-alert" class="alert-success hidden">
-                ✅ <strong>Task Created!</strong> Sent to <code>delivery.html</code> for pickup inspection.
+                ✅ <strong>Task Created!</strong> Dispatched to delivery portal for inspection.
             </div>
         </div>
     </main>
 
-    <!-- RENTAL BOOKING MODAL & BILL BREAKDOWN -->
+    <!-- RENTAL BOOKING MODAL -->
     <div id="booking-modal" class="modal-overlay hidden">
         <div class="modal">
             <h3 id="modal-item-title" style="color: var(--brand); margin-bottom: 4px;">Rent Item</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Complete details below to place order</p>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Fill in delivery details to place order</p>
             
             <form onsubmit="confirmBooking(event)">
                 <div class="form-group">
@@ -134,13 +143,14 @@
 
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="btn" style="background: var(--border); color: #fff;" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">Confirm & Request Delivery</button>
+                    <button type="submit" class="btn btn-success">Confirm & Rent</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        const GITHUB_JSON_URL = 'https://raw.githubusercontent.com/nesar-innovations/Event-august/main/items.json';
         let selectedItemForRent = null;
 
         function switchPage(page) {
@@ -157,6 +167,45 @@
             }
         }
 
+        async function loadApprovedShopItems() {
+            const shopContainer = document.getElementById('shop-items');
+            shopContainer.innerHTML = '<p style="color:var(--text-muted);">Loading live items from cloud...</p>';
+
+            try {
+                // Fetch live JSON array directly from GitHub repo
+                const response = await fetch(`${GITHUB_JSON_URL}?t=${Date.now()}`);
+                const approvedItems = await response.json();
+
+                shopContainer.innerHTML = '';
+
+                if (!approvedItems || approvedItems.length === 0) {
+                    shopContainer.innerHTML = '<p style="color:var(--text-muted);">No live items available in marketplace.</p>';
+                    return;
+                }
+
+                approvedItems.forEach(item => {
+                    const displayImg = item.image ? item.image : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
+                    const itemEncoded = encodeURIComponent(JSON.stringify(item));
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div>
+                            <img src="${displayImg}" alt="${item.item}">
+                            <h3>${item.item}</h3>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Owner: ${item.owner}</p>
+                            <div class="price">₹${Number(item.rate).toLocaleString()} / day</div>
+                        </div>
+                        <button class="btn btn-success" onclick="openBookingModal('${itemEncoded}')">Rent Now</button>
+                    `;
+                    shopContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error('Error fetching JSON:', err);
+                shopContainer.innerHTML = '<p style="color:red;">Failed to load items. Make sure items.json exists in your repo root.</p>';
+            }
+        }
+
         function handleSellerSubmit(event) {
             event.preventDefault();
             const taskData = {
@@ -166,8 +215,7 @@
                 address: document.getElementById('pickup-address').value,
                 item: document.getElementById('item-title').value,
                 rate: document.getElementById('daily-rate').value,
-                status: 'pending_photos',
-                image: ''
+                status: 'pending_inspection'
             };
 
             let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
@@ -180,40 +228,10 @@
             setTimeout(() => alertBox.classList.add('hidden'), 4000);
         }
 
-        function loadApprovedShopItems() {
-            const shopContainer = document.getElementById('shop-items');
-            shopContainer.innerHTML = '';
-            const approvedItems = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
-
-            if (approvedItems.length === 0) {
-                shopContainer.innerHTML = '<p style="color:var(--text-muted);">No live items available right now. Submit an item under "List Your Item" and approve it in manager.html!</p>';
-                return;
-            }
-
-            approvedItems.forEach(item => {
-                const displayImg = item.image ? item.image : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
-                const itemEncoded = encodeURIComponent(JSON.stringify(item));
-                
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <div>
-                        <img src="${displayImg}" alt="${item.item}">
-                        <h3>${item.item}</h3>
-                        <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Owner: ${item.owner}</p>
-                        <div class="price">₹${Number(item.rate).toLocaleString()} / day</div>
-                    </div>
-                    <button class="btn btn-success" onclick="openBookingModal('${itemEncoded}')">Rent Now</button>
-                `;
-                shopContainer.appendChild(card);
-            });
-        }
-
         function openBookingModal(itemEncoded) {
             selectedItemForRent = JSON.parse(decodeURIComponent(itemEncoded));
             document.getElementById('modal-item-title').innerText = `Rent ${selectedItemForRent.item}`;
             
-            // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('start-date').value = today;
             document.getElementById('rent-days').value = 1;
@@ -247,17 +265,14 @@
                 id: 'DEL-' + Math.floor(1000 + Math.random() * 9000),
                 type: 'delivery',
                 item: selectedItemForRent.item,
-                image: selectedItemForRent.image,
                 customer: document.getElementById('cust-name').value,
                 deliveryAddress: document.getElementById('cust-address').value,
                 startDate: document.getElementById('start-date').value,
                 days: days,
                 total: total,
-                status: 'pending_delivery',
-                proofImage: ''
+                status: 'pending_delivery'
             };
 
-            // Save to shared localStorage queue for delivery.html
             let deliveryQueue = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
             deliveryQueue.push(deliveryTask);
             localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryQueue));
@@ -266,7 +281,6 @@
             alert(`Booking Confirmed!\n\nItem: ${deliveryTask.item}\nTotal Bill: ₹${total.toLocaleString()}\nOrder ID: #${deliveryTask.id}\n\nTask sent directly to delivery.html!`);
         }
 
-        window.addEventListener('storage', loadApprovedShopItems);
         window.addEventListener('DOMContentLoaded', loadApprovedShopItems);
     </script>
 </body>
