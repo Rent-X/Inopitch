@@ -7,17 +7,25 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0f172a; /* Slate Blue Theme */
+            background-color: #0f172a;
             color: #f8fafc;
             margin: 0;
-            padding: 40px 20px;
+            padding: 30px 20px;
         }
-        .container-main { max-width: 1000px; margin: 0 auto; }
-        h1 { color: #ffffff; font-size: 24px; margin-bottom: 5px; }
-        .subtext { color: #94a3b8; font-size: 13px; margin-bottom: 30px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 { color: #ffffff; font-size: 24px; margin: 0; }
+        
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 20px;
         }
         .card {
@@ -29,116 +37,177 @@
         }
         .card h3 { margin-top: 0; color: #fff; font-size: 16px; margin-bottom: 10px; }
         .card p { font-size: 13px; color: #94a3b8; margin: 6px 0; }
-        .badge {
-            background: #0f172a;
-            color: #3b82f6;
-            padding: 3px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            border: 1px solid #334155;
-        }
-        .manager-img {
+        .item-img {
             width: 100%;
-            height: 130px;
+            height: 140px;
             object-fit: cover;
             border-radius: 6px;
             margin: 10px 0;
             border: 1px solid #334155;
             background: #0f172a;
         }
-        .btn-approve {
-            background-color: #3b82f6;
-            color: #ffffff;
+        
+        .btn-success {
+            background-color: #10b981;
+            color: #fff;
             border: none;
             padding: 10px;
             border-radius: 6px;
             cursor: pointer;
-            width: 100%;
-            margin-top: 12px;
-            font-weight: 600;
             font-size: 13px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
         }
-        .btn-approve:hover { background-color: #2563eb; }
-        .no-tasks { color: #64748b; font-style: italic; font-size: 14px; }
-        .nav-links { margin-top: 30px; font-size: 13px; }
-        .nav-links a { color: #94a3b8; text-decoration: none; margin-right: 15px; }
+        .btn-success:hover { background-color: #059669; }
+        
+        .btn-danger {
+            background-color: transparent;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-danger:hover { background-color: #ef4444; color: #fff; }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3b82f6;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: none;
+            z-index: 1000;
+        }
+        .no-items { color: #64748b; font-style: italic; font-size: 14px; }
+        .badge-warning {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .nav-links { margin-top: 40px; font-size: 13px; border-top: 1px solid #1e293b; padding-top: 20px; }
+        .nav-links a { color: #94a3b8; text-decoration: none; margin-right: 20px; }
         .nav-links a:hover { color: #fff; }
     </style>
 </head>
 <body>
 
-    <div class="container-main">
-        <h1>RentX Manager Hub</h1>
-        <div class="subtext">Logged in as: nesar.minein@gmail.com</div>
+    <div class="container">
+        <div class="header-flex">
+            <div>
+                <h1>RentX Manager Hub</h1>
+                <span style="font-size: 13px; color: #94a3b8;">Logged in as: <strong>nesar.minein@gmail.com</strong></span>
+            </div>
+        </div>
 
-        <h2 style="font-size: 16px; color: #f8fafc; border-bottom: 1px solid #1e293b; padding-bottom: 10px;">Pending Approvals</h2>
-        <div id="manager-container" class="grid" style="margin-top: 20px;"></div>
+        <h2 style="font-size: 16px; color: #f8fafc; margin-bottom: 15px;">Pending Final Approvals</h2>
+        <div id="manager-grid" class="grid"></div>
 
         <div class="nav-links">
-            <a href="index.html">← Back to Marketplace</a>
+            <a href="delivery.html">← Back to Delivery Portal</a>
         </div>
     </div>
 
-    <script>
-        function loadManagerApprovals() {
-            const container = document.getElementById('manager-container');
-            let pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || 
-                               JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+    <div id="toast" class="toast">Action successful!</div>
 
-            if (pendingItems.length === 0) {
-                container.innerHTML = '<p class="no-tasks">No pending items awaiting manager approval.</p>';
+    <script>
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function loadManagerTasks() {
+            const container = document.getElementById('manager-grid');
+            const approvals = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+
+            if (approvals.length === 0) {
+                container.innerHTML = '<p class="no-items">No items currently pending manager approval.</p>';
                 return;
             }
 
             container.innerHTML = '';
-            pendingItems.forEach(item => {
+            approvals.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'card';
-                
+
                 let imageHtml = item.image 
-                    ? `<img src="${item.image}" class="manager-img" alt="Item">`
-                    : `<div style="font-size: 12px; color: #64748b; margin: 10px 0; font-style: italic;">No image attached</div>`;
+                    ? `<img src="${item.image}" class="item-img" alt="Inspection Photo">`
+                    : `<div style="font-size: 12px; color: #ef4444; margin: 10px 0; font-style: italic;">No photo provided by delivery partner.</div>`;
 
                 card.innerHTML = `
-                    <div class="badge">Verification Required</div>
-                    <h3>${item.name || item.item}</h3>
-                    <p><strong>ID:</strong> ${item.id}</p>
-                    <p><strong>Owner:</strong> ${item.owner || 'N/A'}</p>
-                    <p><strong>Address:</strong> ${item.address || 'N/A'}</p>
-                    <p><strong>Rate:</strong> ₹${item.rate || 0} / day</p>
-                    ${imageHtml}
-                    <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish to Marketplace</button>
+                    <div>
+                        <span class="badge-warning">Awaiting Inspection</span>
+                        <h3>${item.name}</h3>
+                        <p><strong>ID:</strong> ${item.id}</p>
+                        <p><strong>Owner:</strong> ${item.owner}</p>
+                        <p><strong>Location:</strong> ${item.address}</p>
+                        <p><strong>Requested Rate:</strong> ₹${item.rate} / day</p>
+                        ${imageHtml}
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <button class="btn-success" onclick="approveItem('${item.id}')">Approve & Publish</button>
+                        <button class="btn-danger" onclick="rejectItem('${item.id}')">Reject & Delete</button>
+                    </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function approveItem(itemId) {
-            let keyToUse = localStorage.getItem('rentx_manager_approvals') ? 'rentx_manager_approvals' : 'rentx_pending_tasks';
-            let items = JSON.parse(localStorage.getItem(keyToUse)) || [];
-            const approvedItem = items.find(i => i.id === itemId);
+        function approveItem(id) {
+            let approvals = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            const itemIndex = approvals.findIndex(i => i.id === id);
             
-            items = items.filter(item => item.id !== itemId);
-            localStorage.setItem(keyToUse, JSON.stringify(items));
+            if (itemIndex === -1) return;
+            const approvedItem = approvals[itemIndex];
 
-            if (approvedItem) {
-                let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
-                deliveryTasks.push(approvedItem);
-                localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryTasks));
+            // Move to marketplace
+            let marketplaceItems = JSON.parse(localStorage.getItem('rentx_marketplace_items')) || [];
+            marketplaceItems.push(approvedItem);
+            localStorage.setItem('rentx_marketplace_items', JSON.stringify(marketplaceItems));
 
-                let marketplaceItems = JSON.parse(localStorage.getItem('rentx_marketplace_items')) || [];
-                marketplaceItems.push(approvedItem);
-                localStorage.setItem('rentx_marketplace_items', JSON.stringify(marketplaceItems));
-            }
-            
-            alert("Item approved, published to Marketplace, and sent to delivery!");
-            loadManagerApprovals();
+            // Remove from approvals
+            approvals.splice(itemIndex, 1);
+            localStorage.setItem('rentx_manager_approvals', JSON.stringify(approvals));
+
+            showToast("Item Approved & Published!");
+            loadManagerTasks();
         }
 
-        window.onload = loadManagerApprovals;
+        function rejectItem(id) {
+            let approvals = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            const itemIndex = approvals.findIndex(i => i.id === id);
+            
+            if (itemIndex === -1) return;
+
+            // Remove from approvals queue
+            approvals.splice(itemIndex, 1);
+            localStorage.setItem('rentx_manager_approvals', JSON.stringify(approvals));
+
+            showToast("Item Rejected.");
+            loadManagerTasks();
+        }
+
+        window.onload = loadManagerTasks;
     </script>
 </body>
 </html>
