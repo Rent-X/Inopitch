@@ -25,7 +25,7 @@
         .price { font-size: 18px; font-weight: bold; color: var(--accent); margin: 8px 0; }
         .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--success); color: #fff; margin-top: 12px; }
         
-        /* Centering the Seller Form Container */
+        /* Centered Form Layout */
         .form-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .form-box { width: 100%; max-width: 500px; background: var(--bg-card); padding: 24px; border-radius: 12px; border: 1px solid var(--border); }
         .form-group { margin-bottom: 16px; width: 100%; }
@@ -54,7 +54,7 @@
         <div class="grid" id="shop-container"></div>
     </main>
 
-    <!-- SELLER VIEW (Centered Layout) -->
+    <!-- SELLER VIEW -->
     <main id="view-sell" class="hidden">
         <div class="form-container">
             <h3 style="margin-bottom: 16px; font-size: 20px; text-align: center;">Submit Item for Manager Approval</h3>
@@ -112,67 +112,46 @@
         let currentRentingItem = null;
 
         function switchTab(tab) {
+            const shopView = document.getElementById('view-shop');
+            const sellView = document.getElementById('view-sell');
+            const btnShop = document.getElementById('btn-shop');
+            const btnSell = document.getElementById('btn-sell');
+
             if (tab === 'shop') {
-                document.getElementById('view-shop').classList.remove('hidden');
-                document.getElementById('view-sell').classList.add('hidden');
-                document.getElementById('btn-shop').classList.add('active');
-                document.getElementById('btn-sell').classList.remove('active');
+                shopView.classList.remove('hidden');
+                sellView.classList.add('hidden');
+                btnShop.classList.add('active');
+                btnSell.classList.remove('active');
                 loadShopItems();
             } else {
-                document.getElementById('view-shop').classList.add('hidden');
-                document.getElementById('view-sell').classList.remove('hidden');
-                document.getElementById('btn-sell').classList.add('active');
-                document.getElementById('btn-shop').classList.remove('active');
+                shopView.classList.add('hidden');
+                sellView.classList.remove('hidden');
+                btnSell.classList.add('active');
+                btnShop.classList.remove('active');
             }
         }
 
-async function loadShopItems() {
-    const container = document.getElementById('shop-container');
-    container.innerHTML = '';
+        async function loadShopItems() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
 
-    let items = [];
-    const approvedLocally = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
+            let items = [];
+            const approvedLocally = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
 
-    try {
-        const response = await fetch('items.json');
-        if (response.ok) {
-            const jsonItems = await response.json();
-            items = [...approvedLocally, ...jsonItems];
-        } else {
-            items = approvedLocally;
-        }
-    } catch (err) {
-        items = approvedLocally;
-    }
+            try {
+                const response = await fetch('items.json');
+                if (response.ok) {
+                    const jsonItems = await response.json();
+                    items = [...approvedLocally, ...jsonItems];
+                } else {
+                    items = approvedLocally;
+                }
+            } catch (err) {
+                items = approvedLocally;
+            }
 
-    // Filter out completely empty items
-    items = items.filter(item => item && (item.name || item.title || item.item));
-
-    if (items.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted);">No items currently available for rent.</p>';
-        return;
-    }
-
-    items.forEach(item => {
-        // Fallbacks check multiple possible property names from your JSON or form
-        const itemName = item.name || item.title || item.item || 'Featured Rental Item';
-        const itemRate = item.rate || item.price || 100;
-        const itemImage = item.image || item.img || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=500&q=80';
-        const itemId = item.id || Math.random().toString(36).substr(2, 9);
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <div>
-                <img src="${itemImage}" alt="${itemName}">
-                <h3>${itemName}</h3>
-                <div class="price">₹${itemRate} / day</div>
-            </div>
-            <button class="btn" onclick="openRentalModal('${itemId}', '${itemName}', ${itemRate})">Rent Now</button>
-        `;
-        container.appendChild(card);
-    });
-}
+            // Filter out empty or broken item entries
+            items = items.filter(item => item && (item.name || item.title || item.item));
 
             if (items.length === 0) {
                 container.innerHTML = '<p style="color:var(--text-muted);">No items currently available for rent.</p>';
@@ -180,10 +159,9 @@ async function loadShopItems() {
             }
 
             items.forEach(item => {
-                // Fallbacks prevent "undefined" text if json keys differ
-                const itemName = item.name || item.title || 'Unnamed Item';
-                const itemRate = item.rate || item.price || 0;
-                const itemImage = item.image || item.img || 'https://via.placeholder.com/300';
+                const itemName = item.name || item.title || item.item || 'Featured Rental Item';
+                const itemRate = item.rate || item.price || 100;
+                const itemImage = item.image || item.img || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=500&q=80';
                 const itemId = item.id || Math.random().toString(36).substr(2, 9);
 
                 const card = document.createElement('div');
