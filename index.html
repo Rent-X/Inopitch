@@ -75,10 +75,6 @@
                     <label>Pickup Address</label>
                     <textarea id="pickup-address" required rows="3" placeholder="Full pickup location address"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" id="item-image" required placeholder="https://images.unsplash.com/...">
-                </div>
                 <button type="submit" class="btn">Submit for Manager Approval</button>
             </form>
         </div>
@@ -187,7 +183,6 @@
                 owner: document.getElementById('owner-name').value,
                 rate: parseFloat(document.getElementById('item-rate').value),
                 address: document.getElementById('pickup-address').value,
-                image: document.getElementById('item-image').value,
                 submittedAt: new Date().toISOString()
             };
 
