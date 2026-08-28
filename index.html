@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0f172a; /* Slate Blue Theme */
+            background-color: #0f172a;
             color: #f8fafc;
             margin: 0;
             padding: 30px 20px;
@@ -22,17 +22,17 @@
             margin-bottom: 30px;
         }
         h1 { color: #ffffff; font-size: 24px; margin: 0; }
-        .btn-toggle {
-            background-color: #3b82f6; /* Vibrant Blue */
+        .btn-primary {
+            background-color: #3b82f6;
             color: #fff;
             border: none;
-            padding: 9px 18px;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
         }
-        .btn-toggle:hover { background-color: #2563eb; }
+        .btn-primary:hover { background-color: #2563eb; }
         
         .grid {
             display: grid;
@@ -45,6 +45,9 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .card h3 { margin-top: 0; color: #fff; font-size: 16px; margin-bottom: 10px; }
         .card p { font-size: 13px; color: #94a3b8; margin: 6px 0; }
@@ -58,7 +61,7 @@
             background: #0f172a;
         }
         
-        /* Modal Form for Listing */
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -106,18 +109,32 @@
             font-size: 13px;
         }
         .file-label:hover { border-color: #3b82f6; color: #fff; }
-        .btn-submit {
-            background-color: #3b82f6;
-            color: #ffffff;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #94a3b8;
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
-            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 8px;
         }
-        .btn-submit:hover { background-color: #2563eb; }
+        .btn-secondary:hover { background-color: #334155; color: #fff; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #10b981;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: none;
+            z-index: 1000;
+        }
         .no-items { color: #64748b; font-style: italic; font-size: 14px; }
     </style>
 </head>
@@ -126,14 +143,17 @@
     <div class="container">
         <div class="header-flex">
             <h1>RentX Marketplace</h1>
-            <button class="btn-toggle" onclick="toggleModal(true)">+ List an Item</button>
+            <button class="btn-primary" onclick="openModal('listModal')">+ List an Item</button>
         </div>
 
         <h2 style="font-size: 16px; color: #f8fafc; margin-bottom: 15px;">Available Items for Rent</h2>
         <div id="marketplace-grid" class="grid"></div>
     </div>
 
-    <!-- Modal for Listing Item -->
+    <!-- Toast Notification (Zero Alerts) -->
+    <div id="toast" class="toast">Action successful!</div>
+
+    <!-- Modal: List Item -->
     <div id="listModal" class="modal">
         <div class="modal-content">
             <h2 style="color: #fff; font-size: 18px; margin-top: 0; margin-bottom: 20px;">Submit Item for Approval</h2>
@@ -157,14 +177,47 @@
                 <input type="file" id="itemImage" accept="image/*" style="display: none;" onchange="previewFile(this)">
             </label>
 
-            <button class="btn-submit" onclick="submitItem()">Submit to Manager</button>
-            <button class="btn-toggle" style="width: 100%; margin-top: 10px; background: transparent; border: 1px solid #334155; color: #94a3b8;" onclick="toggleModal(false)">Cancel</button>
+            <button class="btn-primary" style="width: 100%;" onclick="submitItem()">Submit to Manager</button>
+            <button class="btn-secondary" onclick="closeModal('listModal')">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Modal: Rent Item Checkout -->
+    <div id="rentModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #fff; font-size: 18px; margin-top: 0; margin-bottom: 5px;" id="rentModalTitle">Rent Item</h2>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;" id="rentModalRate"></p>
+            
+            <label>Your Full Name (Renter)</label>
+            <input type="text" id="renterName" placeholder="Enter your name">
+
+            <label>Delivery Address</label>
+            <input type="text" id="renterAddress" placeholder="Where should we deliver this?">
+
+            <label>Contact Phone Number</label>
+            <input type="text" id="renterPhone" placeholder="10-digit mobile number">
+
+            <button class="btn-primary" style="width: 100%;" onclick="confirmRental()">Confirm & Dispatch Order</button>
+            <button class="btn-secondary" onclick="closeModal('rentModal')">Cancel</button>
         </div>
     </div>
 
     <script>
-        function toggleModal(show) {
-            document.getElementById('listModal').style.display = show ? 'flex' : 'none';
+        let selectedItemForRent = null;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
 
         function previewFile(input) {
@@ -187,11 +240,10 @@
             const fileInput = document.getElementById('itemImage');
 
             if (!name || !owner || !rate || !address) {
-                alert("Please fill out all fields before submitting.");
+                showToast("Please fill out all fields.");
                 return;
             }
 
-            // Async promise to ensure photo base64 is fully captured before storing
             let imageData = "";
             if (fileInput.files && fileInput.files[0]) {
                 imageData = await new Promise((resolve) => {
@@ -214,16 +266,53 @@
             approvals.push(newItem);
             localStorage.setItem('rentx_manager_approvals', JSON.stringify(approvals));
 
-            alert("Item successfully submitted with photo to Manager for approval!");
-            toggleModal(false);
+            showToast("Item submitted to Manager successfully!");
+            closeModal('listModal');
             
-            // Clear form fields
             document.getElementById('itemName').value = '';
             document.getElementById('ownerName').value = '';
             document.getElementById('itemRate').value = '';
             document.getElementById('itemAddress').value = '';
             document.getElementById('itemImage').value = '';
             document.getElementById('imagePreview').style.display = 'none';
+        }
+
+        function openRentModal(itemJson) {
+            selectedItemForRent = JSON.parse(decodeURIComponent(itemJson));
+            document.getElementById('rentModalTitle').textContent = `Rent: ${selectedItemForRent.name}`;
+            document.getElementById('rentModalRate').textContent = `Rate: ₹${selectedItemForRent.rate} / day`;
+            openModal('rentModal');
+        }
+
+        function confirmRental() {
+            const renterName = document.getElementById('renterName').value.trim();
+            const renterAddress = document.getElementById('renterAddress').value.trim();
+            const renterPhone = document.getElementById('renterPhone').value.trim();
+
+            if (!renterName || !renterAddress || !renterPhone) {
+                showToast("Please fill in your delivery details.");
+                return;
+            }
+
+            const rentalOrder = {
+                id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
+                name: `Rental: ${selectedItemForRent.name}`,
+                owner: selectedItemForRent.owner,
+                address: `Deliver to: ${renterAddress} (Renter: ${renterName}, Ph: ${renterPhone})`,
+                rate: selectedItemForRent.rate,
+                image: selectedItemForRent.image
+            };
+
+            let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+            deliveryTasks.push(rentalOrder);
+            localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryTasks));
+
+            showToast("Rental order placed & sent to Delivery Portal!");
+            closeModal('rentModal');
+
+            document.getElementById('renterName').value = '';
+            document.getElementById('renterAddress').value = '';
+            document.getElementById('renterPhone').value = '';
         }
 
         function loadMarketplaceItems() {
@@ -244,13 +333,17 @@
                     ? `<img src="${item.image}" class="item-img" alt="Item">`
                     : `<div style="font-size: 12px; color: #64748b; margin: 10px 0; font-style: italic;">No image available</div>`;
 
+                const encodedItem = encodeURIComponent(JSON.stringify(item));
+
                 card.innerHTML = `
-                    <h3>${item.name}</h3>
-                    <p><strong>Owner:</strong> ${item.owner}</p>
-                    <p><strong>Address:</strong> ${item.address}</p>
-                    <p><strong>Rate:</strong> ₹${item.rate} / day</p>
-                    ${imageHtml}
-                    <button class="btn-submit" style="margin-top: 10px; padding: 8px; font-size: 12px;" onclick="alert('Rental request initiated for ${item.name}!')">Rent Item</button>
+                    <div>
+                        <h3>${item.name}</h3>
+                        <p><strong>Owner:</strong> ${item.owner}</p>
+                        <p><strong>Pickup Location:</strong> ${item.address}</p>
+                        <p><strong>Rate:</strong> ₹${item.rate} / day</p>
+                        ${imageHtml}
+                    </div>
+                    <button class="btn-primary" style="margin-top: 15px; width: 100%;" onclick="openRentModal('${encodedItem}')">Rent This Item</button>
                 `;
                 container.appendChild(card);
             });
