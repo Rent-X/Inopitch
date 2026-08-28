@@ -3,101 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentX - Manager Control Dashboard</title>
+    <title>RentX Manager Hub</title>
     <style>
-        :root {
-            --bg-main: #0f172a;
-            --bg-card: #1e293b;
-            --border: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #f59e0b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --brand: #3b82f6;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); padding: 24px; }
-        header { padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-        .preview-img { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin: 12px 0; border: 1px solid var(--border); }
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .btn-success { background: var(--success); color: #fff; }
-        .btn-danger { background: var(--danger); color: #fff; margin-top: 8px; }
+        h1 { color: #ffffff; }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .card h3 { margin-top: 0; color: #2196F3; }
+        .btn-approve {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .btn-approve:hover { background-color: #0b7dda; }
+        .no-tasks { color: #888; font-style: italic; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>RentX Manager Hub</h1>
-        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Logged in as: <strong>nesar.minein@gmail.com</strong></p>
-    </header>
 
-    <h2 style="font-size: 18px; margin-bottom: 12px;">Pending Item Approvals</h2>
-    <div id="manager-grid" class="grid"></div>
+    <h1>RentX Manager Hub</h1>
+    <p>Logged in as: nesar.minein@gmail.com</p>
+
+    <h2>Pending Item Approvals</h2>
+    <div id="manager-container" class="container">
+        <!-- Dynamic manager approvals will load here -->
+    </div>
 
     <script>
-        function loadManagerData() {
-            const grid = document.getElementById('manager-grid');
-            grid.innerHTML = '';
+        function loadManagerApprovals() {
+            const container = document.getElementById('manager-container');
+            // Reads from the unified storage key where marketplace items get submitted
+            const pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
 
-            const pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
-            const readyTasks = pendingTasks.filter(t => t.status === 'photos_submitted');
-
-            if (readyTasks.length === 0) {
-                grid.innerHTML = '<p style="color: var(--text-muted);">No pending items awaiting manager approval.</p>';
+            if (pendingItems.length === 0) {
+                container.innerHTML = '<p class="no-tasks">No pending items awaiting manager approval.</p>';
                 return;
             }
 
-            readyTasks.forEach(task => {
+            container.innerHTML = '';
+            pendingItems.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <h3>${task.item}</h3>
-                    <p style="color: var(--accent); font-weight: bold; margin-top: 4px;">₹${Number(task.rate).toLocaleString()} / day</p>
-                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;"><strong>Owner:</strong> ${task.owner}</p>
-                    <p style="color: var(--text-muted); font-size: 13px;"><strong>Pickup:</strong> ${task.address}</p>
-                    
-                    <img src="${task.image}" class="preview-img" alt="Inspection Photo">
-
-                    <button class="btn btn-success" onclick="approveTask('${task.id}')">Approve & Publish to Shop</button>
-                    <button class="btn btn-danger" onclick="rejectTask('${task.id}')">Reject & Remove</button>
+                    <h3>${item.name || item.item || 'New Listing'}</h3>
+                    <p><strong>ID:</strong> #${item.id}</p>
+                    <p><strong>Owner:</strong> ${item.owner || 'N/A'}</p>
+                    <p><strong>Address:</strong> ${item.address || 'N/A'}</p>
+                    <p><strong>Rate:</strong> ₹${item.rate || 0} / day</p>
+                    <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish Item</button>
                 `;
-                grid.appendChild(card);
+                container.appendChild(card);
             });
         }
 
-        function approveTask(taskId) {
-            let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
-            const taskToApprove = pendingTasks.find(t => t.id === taskId);
-
-            if (!taskToApprove) return;
-
-            // 1. Remove from pending queue
-            pendingTasks = pendingTasks.filter(t => t.id !== taskId);
-            localStorage.setItem('rentx_manager_approvals', JSON.stringify(pendingTasks));
-
-            // 2. Add to live marketplace approved items
-            taskToApprove.status = 'approved';
-            let approvedItems = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
-            approvedItems.push(taskToApprove);
-            localStorage.setItem('rentx_approved_items', JSON.stringify(approvedItems));
-
-            loadManagerData();
-            alert(`Item "${taskToApprove.item}" approved! Card cleared from manager queue and published live to index.html.`);
+        function approveItem(itemId) {
+            let items = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            
+            // Filter out the approved item from the local storage queue
+            items = items.filter(item => item.id !== itemId);
+            
+            localStorage.setItem('rentx_manager_approvals', JSON.stringify(items));
+            
+            alert("Item approved successfully!");
+            loadManagerApprovals(); // Refresh view instantly
         }
 
-        function rejectTask(taskId) {
-            let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
-            pendingTasks = pendingTasks.filter(t => t.id !== taskId);
-            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingTasks));
-
-            loadManagerData();
-            alert('Item rejected and removed from approval queue.');
-        }
-
-        window.addEventListener('storage', loadManagerData);
-        window.addEventListener('DOMContentLoaded', loadManagerData);
+        // Load items on page start
+        window.onload = loadManagerApprovals;
     </script>
 </body>
 </html>
