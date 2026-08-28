@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://github.com/nesar-innovations/Event-august/blob/7c197f1d2a4fd2fa8795850133d33f964ecf2b1b/rentx.PNG?raw=true">
     <title>RentX Marketplace</title>
     <style>
         body {
@@ -62,7 +61,6 @@
             background: #0f172a;
         }
         
-        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -122,6 +120,9 @@
             z-index: 1000;
         }
         .no-items { color: #64748b; font-style: italic; font-size: 14px; }
+        .nav-links { margin-top: 40px; font-size: 13px; border-top: 1px solid #1e293b; padding-top: 20px; }
+        .nav-links a { color: #94a3b8; text-decoration: none; margin-right: 20px; }
+        .nav-links a:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -134,12 +135,16 @@
 
         <h2 style="font-size: 16px; color: #f8fafc; margin-bottom: 15px;">Available Items for Rent</h2>
         <div id="marketplace-grid" class="grid"></div>
+
+        <div class="nav-links">
+            <a href="delivery.html">Delivery Portal →</a>
+            <a href="manager.html">Manager Hub →</a>
+        </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="toast">Action successful!</div>
 
-    <!-- Modal: List Item (No image required from customer) -->
+    <!-- Modal: List Item -->
     <div id="listModal" class="modal">
         <div class="modal-content">
             <h2 style="color: #fff; font-size: 18px; margin-top: 0; margin-bottom: 20px;">List Item for Rent</h2>
@@ -213,7 +218,7 @@
                 owner: owner,
                 rate: rate,
                 address: address,
-                image: "" // Empty initially, filled by delivery partner
+                image: "" 
             };
 
             let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
@@ -282,7 +287,7 @@
                 card.className = 'card';
                 
                 let imageHtml = item.image 
-                    ? `<img src="${item.image}" class="item-img" alt="Item">`
+                    ? `<img src="${item.image}" class="item-img" alt="Verified Item">`
                     : `<div style="font-size: 12px; color: #64748b; margin: 10px 0; font-style: italic;">No image available</div>`;
 
                 const encodedItem = encodeURIComponent(JSON.stringify(item));
