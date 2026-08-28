@@ -132,7 +132,7 @@
         <p id="item-title" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Item:</strong> Sony Alpha A7 III Camera</p>
         
         <div class="upload-zone" id="upload-box">
-            <p>📷 Tap to capture or select 360° inspection photos</p>
+            <p>📷 Tap to capture or select inspection photos</p>
             <small style="color: var(--text-muted);">Real camera upload mandatory</small>
             <input type="file" id="photo-input" multiple accept="image/*" onchange="handlePhotoUpload(event)">
         </div>
@@ -144,7 +144,7 @@
         </div>
 
         <div id="wait-msg" class="hidden" style="margin-top: 16px; text-align: center; color: var(--accent); font-weight: 500;">
-            ⏳ Photos sent to Manager (<strong>nesar.minein@gmail.com</strong>). Wait at owner location for approval...
+            ⏳ Photos sent to Manager. Wait at owner location for approval...
         </div>
     </div>
 
@@ -199,8 +199,14 @@
             dbBadge.className = 'badge badge-pending';
             dbBadge.innerText = 'Pending Manager Approval';
 
-            // Store uploaded inspection photos for manager review
             localStorage.setItem('rentx_inspection_photos', JSON.stringify(uploadedPhotoData));
+
+            const savedTask = localStorage.getItem('rentx_active_task');
+            if (savedTask && uploadedPhotoData.length > 0) {
+                const taskData = JSON.parse(savedTask);
+                taskData.image = uploadedPhotoData[0];
+                localStorage.setItem('rentx_active_task', JSON.stringify(taskData));
+            }
 
             try {
                 await fetch('https://api.resend.com/emails', {
@@ -213,11 +219,11 @@
                         from: 'RentX Delivery <onboarding@resend.dev>',
                         to: 'nesar.minein@gmail.com',
                         subject: '🚨 Field Inspection Photos Uploaded',
-                        html: '<p>A delivery partner uploaded field inspection photos. Please log into manager.html to review.</p>'
+                        html: '<p>A delivery partner uploaded field inspection photos. Please review inside manager.html.</p>'
                     })
                 });
             } catch (err) {
-                console.warn('CORS restriction on client fetch. Local storage synced for manager.');
+                console.warn('CORS restriction on client fetch. Local storage synced.');
             }
         }
 
@@ -241,7 +247,6 @@
             document.getElementById('wait-msg').innerHTML = '❌ Inspection Rejected. Return item to owner.';
         }
 
-        // Listen for manager approval changes live across browser tabs
         window.addEventListener('storage', (e) => {
             if (e.key === 'rentx_active_task') {
                 loadTask();
