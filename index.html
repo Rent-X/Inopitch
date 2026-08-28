@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentX - Delivery Partner Portal</title>
+    <title>RentX - Marketplace</title>
     <style>
         :root {
             --bg-main: #0f172a;
@@ -13,242 +13,275 @@
             --text-muted: #94a3b8;
             --accent: #f59e0b;
             --success: #10b981;
-            --danger: #ef4444;
             --brand: #3b82f6;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            padding: 24px;
-        }
-
-        header {
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 24px;
-        }
-
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
-        .badge-approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-
-        .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 24px;
-            text-align: center;
-            margin: 16px 0;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .upload-zone input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .preview-grid img {
-            width: 100%;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--brand);
-            color: #fff;
-        }
-
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .hidden { display: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 24px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .nav-tabs { display: flex; gap: 12px; background: var(--bg-card); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+        .tab-btn { background: none; border: none; color: var(--text-muted); padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .tab-btn.active { background: var(--brand); color: #fff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; }
+        .price { font-size: 18px; font-weight: bold; color: var(--accent); margin: 8px 0; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-muted); }
+        .form-control { width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); font-size: 14px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; }
+        .btn-success { background: var(--success); }
+        .hidden { display: none !important; }
+        .form-container { max-width: 600px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); padding: 24px; border-radius: 12px; }
+        .alert-success { background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 12px; border-radius: 8px; margin-top: 16px; text-align: center; }
+        
+        /* Interactive Booking Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .bill-box { background: #0f172a; border: 1px dashed var(--border); border-radius: 8px; padding: 14px; margin: 16px 0; }
+        .bill-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+        .bill-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; color: var(--success); padding-top: 6px; border-top: 1px solid var(--border); }
     </style>
+
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          // Replace with your EmailJS Public Key
+          emailjs.init("asIDX-R2PgGvy-70I");
+       })();
+    </script>
 </head>
 <body>
-
     <header>
-        <h1>RentX Delivery Partner App</h1>
-        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Field Pickup & Inspection Terminal</p>
+        <div>
+            <h1>RentX Marketplace</h1>
+            <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Rent High-Value Items or Earn From What You Own</p>
+        </div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchPage('shop')">Shop All Items</button>
+            <button class="tab-btn" onclick="switchPage('seller')">List Your Item (Seller)</button>
+        </div>
     </header>
 
-    <div class="card">
-        <div class="card-header">
-            <h3 id="task-title">Task #RX-9042: Owner Pickup</h3>
-            <span id="db-status-badge" class="badge badge-pending">Action Required</span>
+    <main id="page-shop">
+        <h2 style="margin-bottom: 16px; font-size: 20px;">Available for Rent</h2>
+        <div class="grid" id="shop-items"></div>
+    </main>
+
+    <main id="page-seller" class="hidden">
+        <div class="form-container">
+            <h2 style="margin-bottom: 8px; font-size: 20px;">List Your Item for Rent</h2>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">Fill in details below for pickup inspection.</p>
+            
+            <form id="seller-form" onsubmit="handleSellerSubmit(event)">
+                <div class="form-group">
+                    <label>Owner Full Name</label>
+                    <input type="text" id="owner-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+                </div>
+                <div class="form-group">
+                    <label>Pickup Address</label>
+                    <input type="text" id="pickup-address" class="form-control" placeholder="House no, street, landmark..." required>
+                </div>
+                <div class="form-group">
+                    <label>Item Name & Model</label>
+                    <input type="text" id="item-title" class="form-control" placeholder="e.g. Sony Alpha A7 Camera" required>
+                </div>
+                <div class="form-group">
+                    <label>Desired Rental Rate (₹/day)</label>
+                    <input type="number" id="daily-rate" class="form-control" placeholder="500" required>
+                </div>
+                <button type="submit" class="btn">Submit for Pickup & Inspection</button>
+            </form>
+            <div id="success-alert" class="alert-success hidden">
+                ✅ <strong>Task Created!</strong> Dispatched to delivery portal for inspection.
+            </div>
         </div>
+    </main>
 
-        <p id="owner-name"><strong>Owner:</strong> Alex Vance</p>
-        <p id="pickup-address" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Pickup Address:</strong> 742 Evergreen Terrace</p>
-        <p id="item-title" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Item:</strong> Sony Alpha A7 III Camera</p>
-        
-        <div class="upload-zone" id="upload-box">
-            <p>📷 Tap to capture or select 360° inspection photos</p>
-            <small style="color: var(--text-muted);">Real camera upload mandatory</small>
-            <input type="file" id="photo-input" multiple accept="image/*" onchange="handlePhotoUpload(event)">
-        </div>
+    <!-- RENTAL BOOKING MODAL -->
+    <div id="booking-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3 id="modal-item-title" style="color: var(--brand); margin-bottom: 4px;">Rent Item</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Fill in delivery details to place order</p>
+            
+            <form onsubmit="confirmBooking(event)">
+                <div class="form-group">
+                    <label>Your Full Name</label>
+                    <input type="text" id="cust-name" class="form-control" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Delivery Address</label>
+                    <textarea id="cust-address" class="form-control" rows="2" placeholder="Full delivery address..." required></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Rental Days</label>
+                        <input type="number" id="rent-days" class="form-control" value="1" min="1" oninput="calculateTotal()" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Start Date</label>
+                        <input type="date" id="start-date" class="form-control" required>
+                    </div>
+                </div>
 
-        <div id="preview-container" class="preview-grid"></div>
+                <!-- Live Itemized Bill -->
+                <div class="bill-box">
+                    <div class="bill-row">
+                        <span>Daily Rate:</span>
+                        <span id="bill-rate">₹0 / day</span>
+                    </div>
+                    <div class="bill-row">
+                        <span>Duration:</span>
+                        <span id="bill-days">1 day(s)</span>
+                    </div>
+                    <div class="bill-total">
+                        <span>Total Payable Amount:</span>
+                        <span id="bill-total">₹0</span>
+                    </div>
+                </div>
 
-        <div style="margin-top: 16px;">
-            <button id="submit-btn" class="btn" disabled onclick="submitForApproval()">Submit Photos & Notify Manager</button>
-        </div>
-
-        <div id="wait-msg" class="hidden" style="margin-top: 16px; text-align: center; color: var(--accent); font-weight: 500;">
-            ⏳ Photos sent to Manager (<strong>nesar.minein@gmail.com</strong>). Wait at owner location for approval...
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn" style="background: var(--border); color: #fff;" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Confirm & Rent</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        let uploadedPhotoData = [];
+        const GITHUB_JSON_URL = 'https://raw.githubusercontent.com/nesar-innovations/Event-august/main/items.json';
+        let selectedItemForRent = null;
 
-        function loadTask() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (savedTask) {
-                const data = JSON.parse(savedTask);
-                document.getElementById('task-title').innerText = `Task #${data.id}: Owner Pickup`;
-                document.getElementById('owner-name').innerHTML = `<strong>Owner:</strong> ${data.owner}`;
-                document.getElementById('pickup-address').innerHTML = `<strong>Pickup Address:</strong> ${data.address}`;
-                document.getElementById('item-title').innerHTML = `<strong>Item:</strong> ${data.item}`;
-
-                if (data.status === 'approved') {
-                    setApprovedUI();
-                } else if (data.status === 'rejected') {
-                    setRejectedUI();
-                }
+        function switchPage(page) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (page === 'shop') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('page-shop').classList.remove('hidden');
+                document.getElementById('page-seller').classList.add('hidden');
+                loadApprovedShopItems();
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('page-shop').classList.add('hidden');
+                document.getElementById('page-seller').classList.remove('hidden');
             }
         }
 
-        function handlePhotoUpload(event) {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
-
-            const container = document.getElementById('preview-container');
-            container.innerHTML = '';
-            uploadedPhotoData = [];
-
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    container.appendChild(img);
-                    uploadedPhotoData.push(e.target.result);
-                };
-                reader.readAsDataURL(file);
-            });
-
-            document.getElementById('submit-btn').disabled = false;
-        }
-
-        async function submitForApproval() {
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('upload-box').style.display = 'none';
-            document.getElementById('wait-msg').classList.remove('hidden');
-
-            const dbBadge = document.getElementById('db-status-badge');
-            dbBadge.className = 'badge badge-pending';
-            dbBadge.innerText = 'Pending Manager Approval';
-
-            // Store uploaded inspection photos for manager review
-            localStorage.setItem('rentx_inspection_photos', JSON.stringify(uploadedPhotoData));
+        async function loadApprovedShopItems() {
+            const shopContainer = document.getElementById('shop-items');
+            shopContainer.innerHTML = '<p style="color:var(--text-muted);">Loading live items from cloud...</p>';
 
             try {
-                await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer re_KmU3LcMf_PdR7dLe2rHifwMd8tf32E7RxKEY'
-                    },
-                    body: JSON.stringify({
-                        from: 'RentX Delivery <onboarding@resend.dev>',
-                        to: 'nesar.minein@gmail.com',
-                        subject: '🚨 Field Inspection Photos Uploaded',
-                        html: '<p>A delivery partner uploaded field inspection photos. Please log into manager.html to review.</p>'
-                    })
+                // Fetch live JSON array directly from GitHub repo
+                const response = await fetch(`${GITHUB_JSON_URL}?t=${Date.now()}`);
+                const approvedItems = await response.json();
+
+                shopContainer.innerHTML = '';
+
+                if (!approvedItems || approvedItems.length === 0) {
+                    shopContainer.innerHTML = '<p style="color:var(--text-muted);">No live items available in marketplace.</p>';
+                    return;
+                }
+
+                approvedItems.forEach(item => {
+                    const displayImg = item.image ? item.image : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
+                    const itemEncoded = encodeURIComponent(JSON.stringify(item));
+                    
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div>
+                            <img src="${displayImg}" alt="${item.item}">
+                            <h3>${item.item}</h3>
+                            <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Owner: ${item.owner}</p>
+                            <div class="price">₹${Number(item.rate).toLocaleString()} / day</div>
+                        </div>
+                        <button class="btn btn-success" onclick="openBookingModal('${itemEncoded}')">Rent Now</button>
+                    `;
+                    shopContainer.appendChild(card);
                 });
             } catch (err) {
-                console.warn('CORS restriction on client fetch. Local storage synced for manager.');
+                console.error('Error fetching JSON:', err);
+                shopContainer.innerHTML = '<p style="color:red;">Failed to load items. Make sure items.json exists in your repo root.</p>';
             }
         }
 
-        function setApprovedUI() {
-            const dbBadge = document.getElementById('db-status-badge');
-            dbBadge.className = 'badge badge-approved';
-            dbBadge.innerText = 'Approved: Transit to Warehouse';
-            document.getElementById('upload-box').style.display = 'none';
-            document.getElementById('wait-msg').classList.remove('hidden');
-            document.getElementById('wait-msg').style.color = 'var(--success)';
-            document.getElementById('wait-msg').innerHTML = '✅ Approved by Manager! Proceed with item to Warehouse.';
+        function handleSellerSubmit(event) {
+            event.preventDefault();
+            const taskData = {
+                id: 'RX-' + Math.floor(1000 + Math.random() * 9000),
+                type: 'pickup',
+                owner: document.getElementById('owner-name').value,
+                address: document.getElementById('pickup-address').value,
+                item: document.getElementById('item-title').value,
+                rate: document.getElementById('daily-rate').value,
+                status: 'pending_inspection'
+            };
+
+            let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            pendingTasks.push(taskData);
+            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingTasks));
+
+            document.getElementById('seller-form').reset();
+            const alertBox = document.getElementById('success-alert');
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 4000);
         }
 
-        function setRejectedUI() {
-            const dbBadge = document.getElementById('db-status-badge');
-            dbBadge.className = 'badge badge-rejected';
-            dbBadge.innerText = 'Rejected';
-            document.getElementById('upload-box').style.display = 'none';
-            document.getElementById('wait-msg').classList.remove('hidden');
-            document.getElementById('wait-msg').style.color = 'var(--danger)';
-            document.getElementById('wait-msg').innerHTML = '❌ Inspection Rejected. Return item to owner.';
+        function openBookingModal(itemEncoded) {
+            selectedItemForRent = JSON.parse(decodeURIComponent(itemEncoded));
+            document.getElementById('modal-item-title').innerText = `Rent ${selectedItemForRent.item}`;
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start-date').value = today;
+            document.getElementById('rent-days').value = 1;
+            
+            document.getElementById('booking-modal').classList.remove('hidden');
+            calculateTotal();
         }
 
-        // Listen for manager approval changes live across browser tabs
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'rentx_active_task') {
-                loadTask();
-            }
-        });
+        function closeModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+        }
 
-        window.addEventListener('DOMContentLoaded', loadTask);
+        function calculateTotal() {
+            if (!selectedItemForRent) return;
+            const days = parseInt(document.getElementById('rent-days').value) || 1;
+            const rate = parseFloat(selectedItemForRent.rate) || 0;
+            const total = days * rate;
+
+            document.getElementById('bill-rate').innerText = `₹${rate.toLocaleString()} / day`;
+            document.getElementById('bill-days').innerText = `${days} day(s)`;
+            document.getElementById('bill-total').innerText = `₹${total.toLocaleString()}`;
+        }
+
+        function confirmBooking(event) {
+            event.preventDefault();
+            const days = parseInt(document.getElementById('rent-days').value) || 1;
+            const rate = parseFloat(selectedItemForRent.rate) || 0;
+            const total = days * rate;
+
+            const deliveryTask = {
+                id: 'DEL-' + Math.floor(1000 + Math.random() * 9000),
+                type: 'delivery',
+                item: selectedItemForRent.item,
+                customer: document.getElementById('cust-name').value,
+                deliveryAddress: document.getElementById('cust-address').value,
+                startDate: document.getElementById('start-date').value,
+                days: days,
+                total: total,
+                status: 'pending_delivery'
+            };
+
+            let deliveryQueue = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+            deliveryQueue.push(deliveryTask);
+            localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryQueue));
+
+            closeModal();
+            alert(`Booking Confirmed!\n\nItem: ${deliveryTask.item}\nTotal Bill: ₹${total.toLocaleString()}\nOrder ID: #${deliveryTask.id}\n\nTask sent directly to delivery.html!`);
+        }
+
+        window.addEventListener('DOMContentLoaded', loadApprovedShopItems);
     </script>
 </body>
 </html>
