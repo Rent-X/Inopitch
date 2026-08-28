@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentX - Delivery Partner Portal</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --brand: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 24px;
+        }
+
+        header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+        .badge-approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            margin: 16px 0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .preview-grid img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--brand);
+            color: #fff;
+        }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>RentX Delivery Partner App</h1>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Field Pickup & Inspection Terminal</p>
+    </header>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 id="task-title">Task #RX-9042: Owner Pickup</h3>
+            <span id="db-status-badge" class="badge badge-pending">Action Required</span>
+        </div>
+
+        <p id="owner-name"><strong>Owner:</strong> Alex Vance</p>
+        <p id="pickup-address" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Pickup Address:</strong> 742 Evergreen Terrace</p>
+        <p id="item-title" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Item:</strong> Sony Alpha A7 III Camera</p>
+        
+        <div class="upload-zone" id="upload-box">
+            <p>📷 Tap to capture or select 360° inspection photos</p>
+            <small style="color: var(--text-muted);">Real camera upload mandatory</small>
+            <input type="file" id="photo-input" multiple accept="image/*" onchange="handlePhotoUpload(event)">
+        </div>
+
+        <div id="preview-container" class="preview-grid"></div>
+
+        <div style="margin-top: 16px;">
+            <button id="submit-btn" class="btn" disabled onclick="submitForApproval()">Submit Photos & Notify Manager</button>
+        </div>
+
+        <div id="wait-msg" class="hidden" style="margin-top: 16px; text-align: center; color: var(--accent); font-weight: 500;">
+            ⏳ Photos sent to Manager (<strong>nesar.minein@gmail.com</strong>). Wait at owner location for approval...
+        </div>
+    </div>
+
+    <script>
+        let uploadedPhotoData = [];
+
+        function loadTask() {
+            const savedTask = localStorage.getItem('rentx_active_task');
+            if (savedTask) {
+                const data = JSON.parse(savedTask);
+                document.getElementById('task-title').innerText = `Task #${data.id}: Owner Pickup`;
+                document.getElementById('owner-name').innerHTML = `<strong>Owner:</strong> ${data.owner}`;
+                document.getElementById('pickup-address').innerHTML = `<strong>Pickup Address:</strong> ${data.address}`;
+                document.getElementById('item-title').innerHTML = `<strong>Item:</strong> ${data.item}`;
+
+                if (data.status === 'approved') {
+                    setApprovedUI();
+                } else if (data.status === 'rejected') {
+                    setRejectedUI();
+                }
+            }
+        }
+
+        function handlePhotoUpload(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            const container = document.getElementById('preview-container');
+            container.innerHTML = '';
+            uploadedPhotoData = [];
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    container.appendChild(img);
+                    uploadedPhotoData.push(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+        async function submitForApproval() {
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('upload-box').style.display = 'none';
+            document.getElementById('wait-msg').classList.remove('hidden');
+
+            const dbBadge = document.getElementById('db-status-badge');
+            dbBadge.className = 'badge badge-pending';
+            dbBadge.innerText = 'Pending Manager Approval';
+
+            // Store uploaded inspection photos for manager review
+            localStorage.setItem('rentx_inspection_photos', JSON.stringify(uploadedPhotoData));
+
+            try {
+                await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer re_KmU3LcMf_PdR7dLe2rHifwMd8tf32E7RxKEY'
+                    },
+                    body: JSON.stringify({
+                        from: 'RentX Delivery <onboarding@resend.dev>',
+                        to: 'nesar.minein@gmail.com',
+                        subject: '🚨 Field Inspection Photos Uploaded',
+                        html: '<p>A delivery partner uploaded field inspection photos. Please log into manager.html to review.</p>'
+                    })
+                });
+            } catch (err) {
+                console.warn('CORS restriction on client fetch. Local storage synced for manager.');
+            }
+        }
+
+        function setApprovedUI() {
+            const dbBadge = document.getElementById('db-status-badge');
+            dbBadge.className = 'badge badge-approved';
+            dbBadge.innerText = 'Approved: Transit to Warehouse';
+            document.getElementById('upload-box').style.display = 'none';
+            document.getElementById('wait-msg').classList.remove('hidden');
+            document.getElementById('wait-msg').style.color = 'var(--success)';
+            document.getElementById('wait-msg').innerHTML = '✅ Approved by Manager! Proceed with item to Warehouse.';
+        }
+
+        function setRejectedUI() {
+            const dbBadge = document.getElementById('db-status-badge');
+            dbBadge.className = 'badge badge-rejected';
+            dbBadge.innerText = 'Rejected';
+            document.getElementById('upload-box').style.display = 'none';
+            document.getElementById('wait-msg').classList.remove('hidden');
+            document.getElementById('wait-msg').style.color = 'var(--danger)';
+            document.getElementById('wait-msg').innerHTML = '❌ Inspection Rejected. Return item to owner.';
+        }
+
+        // Listen for manager approval changes live across browser tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'rentx_active_task') {
+                loadTask();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', loadTask);
+    </script>
+</body>
+</html>
