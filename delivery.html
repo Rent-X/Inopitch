@@ -63,7 +63,7 @@ function loadTasks() {
     const container = document.getElementById('task-container');
     container.innerHTML = '';
 
-    const pendingPickups = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+    const pendingPickups = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
     const pendingDeliveries = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
     const allTasks = [...pendingPickups, ...pendingDeliveries];
 
