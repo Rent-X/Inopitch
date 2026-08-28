@@ -6,65 +6,80 @@
     <title>RentX Manager Hub</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #0b0b0b;
+            color: #d1d1d1;
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
         }
-        h1 { color: #ffffff; }
-        .container {
+        .container-main { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #ffffff; font-size: 24px; margin-bottom: 5px; }
+        .subtext { color: #777; font-size: 13px; margin-bottom: 30px; }
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
-            margin-top: 20px;
         }
         .card {
-            background-color: #1e1e1e;
-            border: 1px solid #333;
-            border-radius: 8px;
+            background-color: #141414;
+            border: 1px solid #222;
+            border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
         }
-        .card h3 { margin-top: 0; color: #3498db; font-size: 18px; }
+        .card h3 { margin-top: 0; color: #fff; font-size: 16px; margin-bottom: 10px; }
+        .card p { font-size: 13px; color: #999; margin: 6px 0; }
+        .badge {
+            background: #222;
+            color: #aaa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            border: 1px solid #333;
+        }
+        .manager-img {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #2c2c2c;
+            background: #0f0f0f;
+        }
         .btn-approve {
-            background-color: #2980b9;
-            color: white;
+            background-color: #ffffff;
+            color: #0b0b0b;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 6px;
             cursor: pointer;
             width: 100%;
-            margin-top: 10px;
-            font-weight: bold;
+            margin-top: 12px;
+            font-weight: 600;
+            font-size: 13px;
         }
-        .btn-approve:hover { background-color: #1f618d; }
-        .no-tasks { color: #888; font-style: italic; }
-        .manager-img-preview {
-            width: 100%;
-            height: 140px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #444;
-            background-color: #111;
-        }
+        .btn-approve:hover { background-color: #dcdcdc; }
+        .no-tasks { color: #666; font-style: italic; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <h1>RentX Manager Hub</h1>
-    <p>Logged in as: nesar.minein@gmail.com</p>
+    <div class="container-main">
+        <h1>RentX Manager Hub</h1>
+        <div class="subtext">Logged in as: nesar.minein@gmail.com</div>
 
-    <h2 style="font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 30px;">Pending Item Approvals & Images</h2>
-    <div id="manager-container" class="container"></div>
+        <h2 style="font-size: 16px; color: #fff; border-bottom: 1px solid #222; padding-bottom: 10px;">Pending Approvals</h2>
+        <div id="manager-container" class="grid" style="margin-top: 20px;"></div>
+    </div>
 
     <script>
         function loadManagerApprovals() {
             const container = document.getElementById('manager-container');
-            // Reads incoming submissions from marketplace
-            const pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            let pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || 
+                               JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
 
             if (pendingItems.length === 0) {
                 container.innerHTML = '<p class="no-tasks">No pending items awaiting manager approval.</p>';
@@ -76,40 +91,43 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                let imageHtml = item.image || item.proof_image_url 
-                    ? `<img src="${item.image || item.proof_image_url}" class="manager-img-preview" alt="Item Image">`
-                    : `<div style="font-size: 12px; color: #775; margin: 10px 0; font-style: italic;">No image attached</div>`;
+                let imageHtml = item.image 
+                    ? `<img src="${item.image}" class="manager-img" alt="Item">`
+                    : `<div style="font-size: 12px; color: #555; margin: 10px 0; font-style: italic;">No image attached</div>`;
 
                 card.innerHTML = `
-                    <div style="background: #2980b9; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: bold; margin-bottom: 10px;">Manager Verification</div>
-                    <h3>${item.name || item.item || 'New Listing'}</h3>
-                    <p><strong>ID:</strong> #${item.id}</p>
+                    <div class="badge">Verification Required</div>
+                    <h3>${item.name || item.item}</h3>
+                    <p><strong>ID:</strong> ${item.id}</p>
                     <p><strong>Owner:</strong> ${item.owner || 'N/A'}</p>
                     <p><strong>Address:</strong> ${item.address || 'N/A'}</p>
                     <p><strong>Rate:</strong> ₹${item.rate || 0} / day</p>
                     ${imageHtml}
-                    <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish Item</button>
+                    <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish to Marketplace</button>
                 `;
                 container.appendChild(card);
             });
         }
 
         function approveItem(itemId) {
-            let items = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
+            let keyToUse = localStorage.getItem('rentx_manager_approvals') ? 'rentx_manager_approvals' : 'rentx_pending_tasks';
+            let items = JSON.parse(localStorage.getItem(keyToUse)) || [];
             const approvedItem = items.find(i => i.id === itemId);
             
-            // Remove from manager queue
             items = items.filter(item => item.id !== itemId);
-            localStorage.setItem('rentx_manager_approvals', JSON.stringify(items));
+            localStorage.setItem(keyToUse, JSON.stringify(items));
 
-            // Push approved item to delivery/active rentals queue so delivery.html can see it
             if (approvedItem) {
                 let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
                 deliveryTasks.push(approvedItem);
                 localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryTasks));
+
+                let marketplaceItems = JSON.parse(localStorage.getItem('rentx_marketplace_items')) || [];
+                marketplaceItems.push(approvedItem);
+                localStorage.setItem('rentx_marketplace_items', JSON.stringify(marketplaceItems));
             }
             
-            alert("Item approved and sent to delivery queue!");
+            alert("Item approved, published to Marketplace, and sent to delivery!");
             loadManagerApprovals();
         }
 
