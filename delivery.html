@@ -13,120 +13,133 @@
             --text-muted: #94a3b8;
             --accent: #f59e0b;
             --success: #10b981;
-            --danger: #ef4444;
             --brand: #3b82f6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-main); color: var(--text-main); padding: 24px; }
         header { padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 600px; margin: 0 auto; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
-        .badge-approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 24px; text-align: center; margin: 16px 0; position: relative; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; margin-bottom: 8px; }
+        .badge-pickup { background: rgba(59, 130, 246, 0.2); color: var(--brand); }
+        .badge-delivery { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center; margin: 12px 0; position: relative; cursor: pointer; font-size: 13px; }
         .upload-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-        .preview-grid img { width: 100%; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .hidden { display: none; }
+        .preview-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-top: 8px; border: 1px solid var(--border); }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: var(--brand); color: #fff; margin-top: 8px; }
+        .btn-success { background: var(--success); }
     </style>
 </head>
 <body>
     <header>
         <h1>RentX Delivery Partner App</h1>
-        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Field Pickup & Inspection Terminal</p>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Active Pickup & Customer Delivery Tasks</p>
     </header>
 
-    <div class="card">
-        <div class="card-header">
-            <h3 id="task-title">Task #RX-0000: Owner Pickup</h3>
-            <span id="db-status-badge" class="badge badge-pending">Action Required</span>
-        </div>
-
-        <p id="owner-name"><strong>Owner:</strong> N/A</p>
-        <p id="pickup-address" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Pickup Address:</strong> N/A</p>
-        <p id="item-title" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Item:</strong> N/A</p>
-        
-        <div class="upload-zone" id="upload-box">
-            <p>📷 Tap to capture or select inspection photos</p>
-            <input type="file" id="photo-input" accept="image/*" onchange="handlePhotoUpload(event)">
-        </div>
-
-        <div id="preview-container" class="preview-grid"></div>
-
-        <div style="margin-top: 16px;">
-            <button id="submit-btn" class="btn" disabled onclick="submitForApproval()">Submit Photos & Notify Manager</button>
-        </div>
-
-        <div id="wait-msg" class="hidden" style="margin-top: 16px; text-align: center; color: var(--accent); font-weight: 500;">
-            ⏳ Photos sent to Manager. Wait at owner location for approval...
-        </div>
-    </div>
+    <h2 style="font-size: 18px; margin-bottom: 12px;">Active Task Queue</h2>
+    <div id="tasks-container" class="grid"></div>
 
     <script>
-        let currentPhoto = '';
+        function loadAllTasks() {
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
 
-        function loadTask() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (savedTask) {
-                const data = JSON.parse(savedTask);
-                document.getElementById('task-title').innerText = `Task #${data.id}: Owner Pickup`;
-                document.getElementById('owner-name').innerHTML = `<strong>Owner:</strong> ${data.owner}`;
-                document.getElementById('pickup-address').innerHTML = `<strong>Pickup Address:</strong> ${data.address}`;
-                document.getElementById('item-title').innerHTML = `<strong>Item:</strong> ${data.item}`;
+            const pendingPickups = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            const pendingDeliveries = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
 
-                const dbBadge = document.getElementById('db-status-badge');
-                if (data.status === 'approved') {
-                    dbBadge.className = 'badge badge-approved';
-                    dbBadge.innerText = 'Approved: Transit to Warehouse';
-                } else if (data.status === 'rejected') {
-                    dbBadge.className = 'badge badge-rejected';
-                    dbBadge.innerText = 'Rejected';
-                }
+            let totalTasks = 0;
+
+            // Render Seller Pickups
+            pendingPickups.forEach(task => {
+                if (task.status !== 'pending_photos') return;
+                totalTasks++;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span class="badge badge-pickup">Seller Pickup Task</span>
+                    <h3>${task.item}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"><strong>Pickup:</strong> ${task.address}</p>
+                    <p style="font-size: 13px; color: var(--text-muted);"><strong>Owner:</strong> ${task.owner}</p>
+                    
+                    <div class="upload-zone">
+                        <p>📷 Upload Inspection Photo</p>
+                        <input type="file" accept="image/*" onchange="handlePickupPhoto(event, '${task.id}')">
+                    </div>
+                    <div id="preview-${task.id}"></div>
+                    <button id="btn-${task.id}" class="btn" disabled onclick="submitPickup('${task.id}')">Submit for Manager Approval</button>
+                `;
+                container.appendChild(card);
+            });
+
+            // Render Customer Deliveries
+            pendingDeliveries.forEach(task => {
+                if (task.status !== 'pending_delivery') return;
+                totalTasks++;
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <span class="badge badge-delivery">Customer Delivery Task</span>
+                    <h3>${task.item}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;"><strong>Deliver To:</strong> ${task.customer}</p>
+                    <p style="font-size: 13px; color: var(--text-muted);"><strong>Address:</strong> ${task.deliveryAddress}</p>
+                    <p style="font-size: 13px; color: var(--accent);"><strong>Amount Paid:</strong> ₹${task.total.toLocaleString()}</p>
+
+                    <div class="upload-zone">
+                        <p>📦 Upload Delivery Proof Photo</p>
+                        <input type="file" accept="image/*" onchange="handleDeliveryPhoto(event, '${task.id}')">
+                    </div>
+                    <div id="preview-${task.id}"></div>
+                    <button id="btn-${task.id}" class="btn btn-success" disabled onclick="completeDelivery('${task.id}')">Mark Handed Over & Complete</button>
+                `;
+                container.appendChild(card);
+            });
+
+            if (totalTasks === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);">No pending pickup or delivery tasks.</p>';
             }
         }
 
-        function handlePhotoUpload(event) {
+        let tempPhotos = {};
+
+        function handlePickupPhoto(event, taskId) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                currentPhoto = e.target.result;
-                const container = document.getElementById('preview-container');
-                container.innerHTML = `<img src="${currentPhoto}" />`;
-                document.getElementById('submit-btn').disabled = false;
+                tempPhotos[taskId] = e.target.result;
+                document.getElementById(`preview-${taskId}`).innerHTML = `<img src="${e.target.result}" class="preview-img" />`;
+                document.getElementById(`btn-${taskId}`).disabled = false;
             };
             reader.readAsDataURL(file);
         }
 
-        function submitForApproval() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (!savedTask) {
-                alert('No active task found. Submit listing from index.html first.');
-                return;
-            }
-
-            const taskData = JSON.parse(savedTask);
-            taskData.image = currentPhoto;
-            taskData.status = 'photos_submitted';
-
-            localStorage.setItem('rentx_active_task', JSON.stringify(taskData));
-
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('upload-box').style.display = 'none';
-            document.getElementById('wait-msg').classList.remove('hidden');
-
-            const dbBadge = document.getElementById('db-status-badge');
-            dbBadge.className = 'badge badge-pending';
-            dbBadge.innerText = 'Pending Manager Approval';
+        function handleDeliveryPhoto(event, taskId) {
+            handlePickupPhoto(event, taskId);
         }
 
-        window.addEventListener('storage', loadTask);
-        window.addEventListener('DOMContentLoaded', loadTask);
+        function submitPickup(taskId) {
+            let pendingPickups = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            pendingPickups = pendingPickups.map(t => {
+                if (t.id === taskId) {
+                    t.image = tempPhotos[taskId];
+                    t.status = 'photos_submitted';
+                }
+                return t;
+            });
+            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingPickups));
+            loadAllTasks();
+        }
+
+        function completeDelivery(taskId) {
+            let pendingDeliveries = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+            pendingDeliveries = pendingDeliveries.filter(t => t.id !== taskId);
+            localStorage.setItem('rentx_delivery_tasks', JSON.stringify(pendingDeliveries));
+            alert(`Delivery Order #${taskId} successfully completed! Task cleared.`);
+            loadAllTasks();
+        }
+
+        window.addEventListener('storage', loadAllTasks);
+        window.addEventListener('DOMContentLoaded', loadAllTasks);
     </script>
 </body>
 </html>
