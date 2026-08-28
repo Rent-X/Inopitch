@@ -26,9 +26,9 @@
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .card h3 { margin-top: 0; color: #2196F3; }
+        .card h3 { margin-top: 0; color: #3498db; font-size: 18px; }
         .btn-approve {
-            background-color: #2196F3;
+            background-color: #2980b9;
             color: white;
             border: none;
             padding: 10px 15px;
@@ -38,8 +38,18 @@
             margin-top: 10px;
             font-weight: bold;
         }
-        .btn-approve:hover { background-color: #0b7dda; }
+        .btn-approve:hover { background-color: #1f618d; }
         .no-tasks { color: #888; font-style: italic; }
+        .manager-img-preview {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            background-color: #111;
+        }
     </style>
 </head>
 <body>
@@ -47,7 +57,7 @@
     <h1>RentX Manager Hub</h1>
     <p>Logged in as: nesar.minein@gmail.com</p>
 
-    <h2>Pending Item Approvals</h2>
+    <h2 style="font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-top: 30px;">Pending Item Approvals & Images</h2>
     <div id="manager-container" class="container">
         <!-- Dynamic manager approvals will load here -->
     </div>
@@ -55,7 +65,6 @@
     <script>
         function loadManagerApprovals() {
             const container = document.getElementById('manager-container');
-            // Reads from the unified storage key where marketplace items get submitted
             const pendingItems = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
 
             if (pendingItems.length === 0) {
@@ -67,12 +76,25 @@
             pendingItems.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                
+                // Check if an image or proof was stored with this item object
+                let imageHtml = '';
+                if (item.image || item.proof_image_url) {
+                    imageHtml = `<img src="${item.image || item.proof_image_url}" class="manager-img-preview" alt="Item Image">`;
+                } else {
+                    imageHtml = `<div style="font-size: 12px; color: #775; margin: 10px 0; font-style: italic;">No image attached with submission</div>`;
+                }
+
                 card.innerHTML = `
-                    <h3>${item.name || item.item || 'New Listing'}</h3>
+                    <div style="background: #2980b9; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: bold; margin-bottom: 10px;">Manager Verification</div>
+                    <h3 style="margin-bottom: 12px;">${item.name || item.item || 'New Listing'}</h3>
                     <p><strong>ID:</strong> #${item.id}</p>
                     <p><strong>Owner:</strong> ${item.owner || 'N/A'}</p>
                     <p><strong>Address:</strong> ${item.address || 'N/A'}</p>
                     <p><strong>Rate:</strong> ₹${item.rate || 0} / day</p>
+                    
+                    ${imageHtml}
+
                     <button class="btn-approve" onclick="approveItem('${item.id}')">Approve & Publish Item</button>
                 `;
                 container.appendChild(card);
@@ -81,17 +103,13 @@
 
         function approveItem(itemId) {
             let items = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
-            
-            // Filter out the approved item from the local storage queue
             items = items.filter(item => item.id !== itemId);
-            
             localStorage.setItem('rentx_manager_approvals', JSON.stringify(items));
             
             alert("Item approved successfully!");
-            loadManagerApprovals(); // Refresh view instantly
+            loadManagerApprovals();
         }
 
-        // Load items on page start
         window.onload = loadManagerApprovals;
     </script>
 </body>
