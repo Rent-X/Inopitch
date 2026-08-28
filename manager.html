@@ -19,20 +19,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-main); color: var(--text-main); padding: 24px; }
         header { padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 650px; margin: 0 auto; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
-        .badge-approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .badge-rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-        .preview-grid img { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
-        .finance-breakdown { background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; margin: 16px 0; font-size: 14px; }
-        .finance-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .preview-img { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; margin: 12px 0; border: 1px solid var(--border); }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; margin-top: 8px; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -41,104 +33,67 @@
         <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Logged in as: <strong>nesar.minein@gmail.com</strong></p>
     </header>
 
-    <div class="card">
-        <div class="card-header">
-            <h3>Pending Approval Request</h3>
-            <span id="mgr-status-badge" class="badge badge-pending">Awaiting Task</span>
-        </div>
-
-        <p id="mgr-item"><strong>Item:</strong> No active request</p>
-        <p id="mgr-rate" style="margin-top: 4px;"><strong>Estimated Rental Rate:</strong> ₹0 / day</p>
-        <p id="mgr-owner" style="color: var(--text-muted); font-size: 14px; margin-top: 4px;"><strong>Owner:</strong> N/A</p>
-        
-        <div class="finance-breakdown">
-            <div class="finance-row"><span>Rental Duration (Example):</span> <span>2 Days</span></div>
-            <div class="finance-row"><span>Total Volume (Rate × 2):</span> <span id="val-total">₹0</span></div>
-            <div class="finance-row" style="color: var(--success);"><span>Owner Payout (75%):</span> <span id="val-owner">₹0</span></div>
-            <div class="finance-row" style="color: var(--brand);"><span>RentX Commission (15%):</span> <span id="val-comm">₹0</span></div>
-            <div class="finance-row" style="color: var(--text-muted);"><span>Ops / Reserve (10%):</span> <span id="val-ops">₹0</span></div>
-        </div>
-
-        <h4 style="margin-bottom: 8px; font-size: 14px;">Delivery Partner Inspection Photos:</h4>
-        <div id="mgr-preview-container" class="preview-grid">
-            <p style="color: var(--text-muted); font-size: 13px; grid-column: span 3;">No photo submitted yet.</p>
-        </div>
-
-        <div style="margin-top: 20px;">
-            <button id="approve-btn" class="btn btn-success" onclick="approveTransit()">Approve Transit & Publish to Shop</button>
-            <button id="reject-btn" class="btn btn-danger" onclick="rejectTransit()">Reject & Return to Owner</button>
-        </div>
-    </div>
+    <h2 style="font-size: 18px; margin-bottom: 12px;">Pending Item Approvals</h2>
+    <div id="manager-grid" class="grid"></div>
 
     <script>
         function loadManagerData() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (!savedTask) return;
+            const grid = document.getElementById('manager-grid');
+            grid.innerHTML = '';
 
-            const task = JSON.parse(savedTask);
-            const rate = Number(task.rate) || 0;
+            const pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            const readyTasks = pendingTasks.filter(t => t.status === 'photos_submitted');
 
-            document.getElementById('mgr-item').innerHTML = `<strong>Item:</strong> ${task.item}`;
-            document.getElementById('mgr-rate').innerHTML = `<strong>Estimated Rental Rate:</strong> ₹${rate.toLocaleString()} / day`;
-            document.getElementById('mgr-owner').innerHTML = `<strong>Owner:</strong> ${task.owner}`;
-
-            const total2Days = rate * 2;
-            document.getElementById('val-total').innerText = `₹${total2Days.toLocaleString()}`;
-            document.getElementById('val-owner').innerText = `₹${(total2Days * 0.75).toLocaleString()}`;
-            document.getElementById('val-comm').innerText = `₹${(total2Days * 0.15).toLocaleString()}`;
-            document.getElementById('val-ops').innerText = `₹${(total2Days * 0.10).toLocaleString()}`;
-
-            const badge = document.getElementById('mgr-status-badge');
-            if (task.status === 'approved') {
-                badge.className = 'badge badge-approved';
-                badge.innerText = 'Approved & Live';
-                document.getElementById('approve-btn').disabled = true;
-                document.getElementById('reject-btn').disabled = true;
-            } else if (task.status === 'rejected') {
-                badge.className = 'badge badge-rejected';
-                badge.innerText = 'Rejected';
-                document.getElementById('approve-btn').disabled = true;
-                document.getElementById('reject-btn').disabled = true;
-            } else {
-                badge.className = 'badge badge-pending';
-                badge.innerText = task.status === 'photos_submitted' ? 'Ready for Review' : 'Awaiting Inspection';
-            }
-
-            if (task.image) {
-                document.getElementById('mgr-preview-container').innerHTML = `<img src="${task.image}" />`;
-            }
-        }
-
-        function approveTransit() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (!savedTask) {
-                alert('No active task found! Submit a item from index.html first.');
+            if (readyTasks.length === 0) {
+                grid.innerHTML = '<p style="color: var(--text-muted);">No pending items awaiting manager approval.</p>';
                 return;
             }
 
-            let task = JSON.parse(savedTask);
-            task.status = 'approved';
-            localStorage.setItem('rentx_active_task', JSON.stringify(task));
+            readyTasks.forEach(task => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h3>${task.item}</h3>
+                    <p style="color: var(--accent); font-weight: bold; margin-top: 4px;">₹${Number(task.rate).toLocaleString()} / day</p>
+                    <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;"><strong>Owner:</strong> ${task.owner}</p>
+                    <p style="color: var(--text-muted); font-size: 13px;"><strong>Pickup:</strong> ${task.address}</p>
+                    
+                    <img src="${task.image}" class="preview-img" alt="Inspection Photo">
 
+                    <button class="btn btn-success" onclick="approveTask('${task.id}')">Approve & Publish to Shop</button>
+                    <button class="btn btn-danger" onclick="rejectTask('${task.id}')">Reject & Remove</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function approveTask(taskId) {
+            let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            const taskToApprove = pendingTasks.find(t => t.id === taskId);
+
+            if (!taskToApprove) return;
+
+            // 1. Remove from pending queue
+            pendingTasks = pendingTasks.filter(t => t.id !== taskId);
+            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingTasks));
+
+            // 2. Add to live marketplace approved items
+            taskToApprove.status = 'approved';
             let approvedItems = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
-            approvedItems = approvedItems.filter(i => i.id !== task.id);
-            approvedItems.push(task);
+            approvedItems.push(taskToApprove);
             localStorage.setItem('rentx_approved_items', JSON.stringify(approvedItems));
 
             loadManagerData();
-            alert('Item approved! It is now published live on index.html.');
+            alert(`Item "${taskToApprove.item}" approved! Card cleared from manager queue and published live to index.html.`);
         }
 
-        function rejectTransit() {
-            const savedTask = localStorage.getItem('rentx_active_task');
-            if (!savedTask) return;
-
-            let task = JSON.parse(savedTask);
-            task.status = 'rejected';
-            localStorage.setItem('rentx_active_task', JSON.stringify(task));
+        function rejectTask(taskId) {
+            let pendingTasks = JSON.parse(localStorage.getItem('rentx_pending_tasks')) || [];
+            pendingTasks = pendingTasks.filter(t => t.id !== taskId);
+            localStorage.setItem('rentx_pending_tasks', JSON.stringify(pendingTasks));
 
             loadManagerData();
-            alert('Item rejected.');
+            alert('Item rejected and removed from approval queue.');
         }
 
         window.addEventListener('storage', loadManagerData);
