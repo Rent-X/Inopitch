@@ -80,8 +80,6 @@
             max-width: 450px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             box-sizing: border-box;
-            max-height: 90vh;
-            overflow-y: auto;
         }
         label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; font-weight: 500; }
         input {
@@ -96,19 +94,6 @@
             font-size: 14px;
         }
         input:focus { outline: none; border-color: #3b82f6; }
-        .file-label {
-            background-color: #0f172a;
-            border: 1px dashed #334155;
-            text-align: center;
-            cursor: pointer;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            display: block;
-            color: #94a3b8;
-            font-size: 13px;
-        }
-        .file-label:hover { border-color: #3b82f6; color: #fff; }
         .btn-secondary {
             background: transparent;
             border: 1px solid #334155;
@@ -150,13 +135,13 @@
         <div id="marketplace-grid" class="grid"></div>
     </div>
 
-    <!-- Toast Notification (Zero Alerts) -->
+    <!-- Toast Notification -->
     <div id="toast" class="toast">Action successful!</div>
 
-    <!-- Modal: List Item -->
+    <!-- Modal: List Item (No image required from customer) -->
     <div id="listModal" class="modal">
         <div class="modal-content">
-            <h2 style="color: #fff; font-size: 18px; margin-top: 0; margin-bottom: 20px;">Submit Item for Approval</h2>
+            <h2 style="color: #fff; font-size: 18px; margin-top: 0; margin-bottom: 20px;">List Item for Rent</h2>
             
             <label>Item Name</label>
             <input type="text" id="itemName" placeholder="e.g., Gaming PC / DSLR Camera">
@@ -170,14 +155,9 @@
             <label>Pickup Address</label>
             <input type="text" id="itemAddress" placeholder="Full pickup location address">
 
-            <img id="imagePreview" class="item-img" alt="Upload Preview" style="display: none;">
-            
-            <label class="file-label">
-                📁 Upload Item Photo
-                <input type="file" id="itemImage" accept="image/*" style="display: none;" onchange="previewFile(this)">
-            </label>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 15px; font-style: italic;">Note: A delivery partner will visit your location to inspect the item and take a verified photo.</p>
 
-            <button class="btn-primary" style="width: 100%;" onclick="submitItem()">Submit to Manager</button>
+            <button class="btn-primary" style="width: 100%;" onclick="submitItem()">Send to Delivery Partner</button>
             <button class="btn-secondary" onclick="closeModal('listModal')">Cancel</button>
         </div>
     </div>
@@ -212,69 +192,40 @@
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
-        }
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        function previewFile(input) {
-            const preview = document.getElementById('imagePreview');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        async function submitItem() {
+        function submitItem() {
             const name = document.getElementById('itemName').value.trim();
             const owner = document.getElementById('ownerName').value.trim();
             const rate = document.getElementById('itemRate').value.trim();
             const address = document.getElementById('itemAddress').value.trim();
-            const fileInput = document.getElementById('itemImage');
 
             if (!name || !owner || !rate || !address) {
                 showToast("Please fill out all fields.");
                 return;
             }
 
-            let imageData = "";
-            if (fileInput.files && fileInput.files[0]) {
-                imageData = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.readAsDataURL(fileInput.files[0]);
-                });
-            }
-
             const newItem = {
-                id: 'RENT-' + Math.floor(100000 + Math.random() * 900000),
+                id: 'LIST-' + Math.floor(100000 + Math.random() * 900000),
                 name: name,
                 owner: owner,
                 rate: rate,
                 address: address,
-                image: imageData
+                image: "" // Empty initially, filled by delivery partner
             };
 
-            let approvals = JSON.parse(localStorage.getItem('rentx_manager_approvals')) || [];
-            approvals.push(newItem);
-            localStorage.setItem('rentx_manager_approvals', JSON.stringify(approvals));
+            let deliveryTasks = JSON.parse(localStorage.getItem('rentx_delivery_tasks')) || [];
+            deliveryTasks.push(newItem);
+            localStorage.setItem('rentx_delivery_tasks', JSON.stringify(deliveryTasks));
 
-            showToast("Item submitted to Manager successfully!");
+            showToast("Item sent to Delivery Partner for pickup & photo verification!");
             closeModal('listModal');
             
             document.getElementById('itemName').value = '';
             document.getElementById('ownerName').value = '';
             document.getElementById('itemRate').value = '';
             document.getElementById('itemAddress').value = '';
-            document.getElementById('itemImage').value = '';
-            document.getElementById('imagePreview').style.display = 'none';
         }
 
         function openRentModal(itemJson) {
