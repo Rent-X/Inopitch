@@ -126,24 +126,53 @@
             }
         }
 
-        async function loadShopItems() {
-            const container = document.getElementById('shop-container');
-            container.innerHTML = '';
+async function loadShopItems() {
+    const container = document.getElementById('shop-container');
+    container.innerHTML = '';
 
-            let items = [];
-            const approvedLocally = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
+    let items = [];
+    const approvedLocally = JSON.parse(localStorage.getItem('rentx_approved_items')) || [];
 
-            try {
-                const response = await fetch('items.json');
-                if (response.ok) {
-                    const jsonItems = await response.json();
-                    items = [...approvedLocally, ...jsonItems];
-                } else {
-                    items = approvedLocally;
-                }
-            } catch (err) {
-                items = approvedLocally;
-            }
+    try {
+        const response = await fetch('items.json');
+        if (response.ok) {
+            const jsonItems = await response.json();
+            items = [...approvedLocally, ...jsonItems];
+        } else {
+            items = approvedLocally;
+        }
+    } catch (err) {
+        items = approvedLocally;
+    }
+
+    // Filter out completely empty items
+    items = items.filter(item => item && (item.name || item.title || item.item));
+
+    if (items.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);">No items currently available for rent.</p>';
+        return;
+    }
+
+    items.forEach(item => {
+        // Fallbacks check multiple possible property names from your JSON or form
+        const itemName = item.name || item.title || item.item || 'Featured Rental Item';
+        const itemRate = item.rate || item.price || 100;
+        const itemImage = item.image || item.img || 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=500&q=80';
+        const itemId = item.id || Math.random().toString(36).substr(2, 9);
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div>
+                <img src="${itemImage}" alt="${itemName}">
+                <h3>${itemName}</h3>
+                <div class="price">₹${itemRate} / day</div>
+            </div>
+            <button class="btn" onclick="openRentalModal('${itemId}', '${itemName}', ${itemRate})">Rent Now</button>
+        `;
+        container.appendChild(card);
+    });
+}
 
             if (items.length === 0) {
                 container.innerHTML = '<p style="color:var(--text-muted);">No items currently available for rent.</p>';
