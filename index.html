@@ -266,7 +266,43 @@
             document.getElementById('renterAddress').value = '';
             document.getElementById('renterPhone').value = '';
         }
+function handleFileSelect(event, taskId) {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        
+        img.onload = function() {
+            // Create canvas to resize the image
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400; // Shrinks image width to 400px
+            const scaleSize = MAX_WIDTH / img.width;
+            
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Compress to JPEG at 70% quality
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            taskPhotos[taskId] = compressedBase64;
+            
+            const imgPreview = document.getElementById(`img-preview-${taskId}`);
+            if (imgPreview) {
+                imgPreview.src = compressedBase64;
+                imgPreview.style.display = 'block';
+            }
+            showToast("Photo compressed & attached! Click 'Upload & Send to Manager'.");
+        };
+        
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
         function loadMarketplaceItems() {
             const container = document.getElementById('marketplace-grid');
             const items = JSON.parse(localStorage.getItem('rentx_marketplace_items')) || [];
